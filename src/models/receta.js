@@ -21,6 +21,10 @@ const Receta = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: false,
     },
+    instrucciones: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
     puntuacion: {
       type: DataTypes.INTEGER,
       allowNull: false,

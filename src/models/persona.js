@@ -28,11 +28,11 @@ const Persona = sequelize.define(
     },
     nacionalidad: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
     restriccionesId: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
     },
   },
   {
