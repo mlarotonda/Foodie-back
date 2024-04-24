@@ -8,7 +8,7 @@ const GrupoFamiliar = sequelize.define(
   "GrupoFamiliar",
   {
     grupoFamiliarId: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
       unique: true,
