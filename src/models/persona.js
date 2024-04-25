@@ -1,8 +1,22 @@
 const { Sequelize, DataTypes } = require("sequelize");
 
-const sequelize = new Sequelize(
-  ""
-);
+const sequelize = new Sequelize("localhost", "foodie", "foodie123", {
+  host: "localhost",
+  dialect: "mysql",
+  port: 3006,
+});
+
+async function testConnection(){
+  try {
+    await sequelize.authenticate();
+    console.log("all good")
+  }
+  catch (err) {
+    console.log("all bad", err);
+  }
+}
+
+testConnection();
 
 // Definición del modelo Persona
 const Persona = sequelize.define(
@@ -10,9 +24,9 @@ const Persona = sequelize.define(
   {
     personaId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
       primaryKey: true,
       unique: true,
+      autoIncrement: true,
     },
     nombre: {
       type: DataTypes.STRING,
@@ -31,8 +45,12 @@ const Persona = sequelize.define(
       allowNull: true,
     },
     restriccionesId: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: true,
+      references: {
+        model: "Restricciones",
+        key: "restriccionesId",
+      },
     },
   },
   {
