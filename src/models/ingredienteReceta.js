@@ -1,23 +1,29 @@
 // Importar Sequelize y configuración de la base de datos
-const { DataTypes, Sequelize } = require('sequelize');
-const sequelize = new Sequelize('nombre-base-de-datos', 'usuario', 'contraseña', {
-  host: 'localhost',
-  dialect: 'mysql' // Puedes usar el dialecto que corresponda a tu base de datos (postgres, mysql, sqlite, etc.)
-});
+import { DataTypes, Sequelize } from "sequelize";
+const sequelize = new Sequelize(
+  "nombre-base-de-datos",
+  "usuario",
+  "contraseña",
+  {
+    host: "localhost",
+    dialect: "mysql",
+  }
+);
 
-const IngredienteStock = sequelize.define('IngredienteStock', {
+const IngredienteReceta = sequelize.define("IngredienteReceta", {
   IngredienteId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
+    autoIncrement: true,
   },
   RecetaId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: false,
   },
   cantidad: {
     type: DataTypes.INTEGER,
-    allowNull: false
-  }
+    allowNull: false,
+  },
 });
 
-module.exports = IngredienteStock;
+export default IngredienteReceta;

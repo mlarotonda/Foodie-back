@@ -1,5 +1,9 @@
-// Importar Sequelize y configuración de la base de datos
-const { DataTypes, Sequelize } = require("sequelize");
+import { DataTypes, Sequelize } from "sequelize";
+import Persona from "./persona";
+import GrupoFamiliar from "./grupoFamiliar";
+import Stock from "./stock";
+import Recetario from "./recetario";
+import Receta from "./receta";
 
 const sequelize = new Sequelize(
   "nombre-base-de-datos",
@@ -26,7 +30,7 @@ const Usuario = sequelize.define("Usuario", {
     },
   },
   historialId: {
-    type: DataTypes.JSON, // Lista de enteros (en este ejemplo se almacena como JSON)
+    type: DataTypes.JSON,
   },
   personaId: {
     type: DataTypes.INTEGER,
@@ -74,4 +78,12 @@ const Usuario = sequelize.define("Usuario", {
   },
 });
 
-module.exports = Usuario;
+Usuario.hasOne(Persona);
+Usuario.hasOne(Stock);
+Usuario.hasOne(GrupoFamiliar);
+Usuario.hasMany(Receta, {
+  through: Recetario,
+  uniqueKey: "recetarioId",
+});
+
+export default Usuario;

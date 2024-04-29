@@ -1,7 +1,7 @@
-const { Sequelize, DataTypes } = require("sequelize");
-const sequelize = new Sequelize(
-  ""
-);
+import { Sequelize, DataTypes } from "sequelize";
+import Persona from "./persona";
+
+const sequelize = new Sequelize("");
 
 // Definición del modelo Restricciones
 const Restricciones = sequelize.define(
@@ -11,7 +11,7 @@ const Restricciones = sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
       primaryKey: true,
-      unique: true,
+      autoIncrement: true,
     },
     celiaco: {
       type: DataTypes.BOOLEAN,
@@ -40,4 +40,5 @@ const Restricciones = sequelize.define(
   }
 );
 
-module.exports = Restricciones;
+Restricciones.belongsTo(Persona);
+export default Restricciones;

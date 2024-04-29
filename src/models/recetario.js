@@ -1,9 +1,7 @@
-const { Sequelize, DataTypes } = require("sequelize");
-const sequelize = new Sequelize(
-  ""
-);
+import { Sequelize, DataTypes } from "sequelize";
+import Usuario from "./usuario";
+const sequelize = new Sequelize("");
 
-// Definición del modelo Recetario
 const Recetario = sequelize.define(
   "Recetario",
   {
@@ -11,7 +9,7 @@ const Recetario = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
-      unique: true,
+      autoIncrement: true,
     },
     recetaId: {
       type: DataTypes.ARRAY(DataTypes.INTEGER),
@@ -29,5 +27,6 @@ const Recetario = sequelize.define(
   }
 );
 
+Recetario.belongsTo(Usuario);
 
-module.exports = Recetario;
+export default Recetario;

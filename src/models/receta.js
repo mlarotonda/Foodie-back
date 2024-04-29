@@ -1,9 +1,8 @@
-const { Sequelize, DataTypes } = require("sequelize");
-const sequelize = new Sequelize(
-  ""
-);
+import { Sequelize, DataTypes } from "sequelize";
+import IngredienteReceta from "./ingredienteReceta";
 
-// Definición del modelo Receta
+const sequelize = new Sequelize("");
+
 const Receta = sequelize.define(
   "Receta",
   {
@@ -11,7 +10,7 @@ const Receta = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
-      unique: true,
+      autoIncrement: true,
     },
     titulo: {
       type: DataTypes.STRING,
@@ -49,4 +48,9 @@ const Receta = sequelize.define(
   }
 );
 
-module.exports = Receta;
+Receta.hasMany(Ingrediente, {
+  through: IngredienteReceta,
+  uniqueKey: "ingredienteRecetaId",
+});
+
+export default Receta;

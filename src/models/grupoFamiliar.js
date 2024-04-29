@@ -1,9 +1,7 @@
-const { Sequelize, DataTypes } = require("sequelize");
-const sequelize = new Sequelize(
-  ""
-);
+import { Sequelize, DataTypes } from "sequelize";
+import Persona from "./persona";
+const sequelize = new Sequelize("");
 
-// Definición del modelo GrupoFamiliar
 const GrupoFamiliar = sequelize.define(
   "GrupoFamiliar",
   {
@@ -14,11 +12,11 @@ const GrupoFamiliar = sequelize.define(
       unique: true,
     },
     personaId: {
-      type: DataTypes.STRING,
+      type: DataTypes.ARRAY(DataTypes.INTEGER),
       allowNull: false,
       references: {
-        model: "Persona", // Nombre de la tabla referenciada
-        key: "personaId", // Clave primaria de la tabla referenciada
+        model: "Persona",
+        key: "personaId",
       },
     },
   },
@@ -27,5 +25,6 @@ const GrupoFamiliar = sequelize.define(
     tableName: "grupos_familiares",
   }
 );
+GrupoFamiliar.hasMany(Persona);
 
-module.exports = GrupoFamiliar;
+export default GrupoFamiliar;

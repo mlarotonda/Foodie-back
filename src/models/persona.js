@@ -1,4 +1,6 @@
-const { Sequelize, DataTypes } = require("sequelize");
+import { Sequelize, DataTypes } from "sequelize";
+import Restricciones from "./restricciones";
+import GrupoFamiliar from "./grupoFamiliar";
 
 const sequelize = new Sequelize("localhost", "foodie", "foodie123", {
   host: "localhost",
@@ -6,19 +8,17 @@ const sequelize = new Sequelize("localhost", "foodie", "foodie123", {
   port: 3006,
 });
 
-async function testConnection(){
+async function testConnection() {
   try {
     await sequelize.authenticate();
-    console.log("all good")
-  }
-  catch (err) {
+    console.log("all good");
+  } catch (err) {
     console.log("all bad", err);
   }
 }
 
 testConnection();
 
-// Definición del modelo Persona
 const Persona = sequelize.define(
   "Persona",
   {
@@ -59,4 +59,7 @@ const Persona = sequelize.define(
   }
 );
 
-module.exports = Persona;
+Persona.hasOne(Restricciones);
+Persona.belongsTo(GrupoFamiliar);
+
+export default Persona;
