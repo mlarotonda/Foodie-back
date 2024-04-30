@@ -1,26 +1,9 @@
-import { Sequelize, DataTypes } from "sequelize";
-import Restricciones from "./restricciones";
-import GrupoFamiliar from "./grupoFamiliar";
+import { Model, DataTypes } from "sequelize";
+import sequelize from "../connection/connection.js";
 
-const sequelize = new Sequelize("localhost", "foodie", "foodie123", {
-  host: "localhost",
-  dialect: "mysql",
-  port: 3006,
-});
+class Persona extends Model {}
 
-async function testConnection() {
-  try {
-    await sequelize.authenticate();
-    console.log("all good");
-  } catch (err) {
-    console.log("all bad", err);
-  }
-}
-
-testConnection();
-
-const Persona = sequelize.define(
-  "Persona",
+Persona.init(
   {
     personaId: {
       type: DataTypes.INTEGER,
@@ -54,12 +37,10 @@ const Persona = sequelize.define(
     },
   },
   {
+    sequelize,
     timestamps: false,
     tableName: "personas",
   }
 );
-
-Persona.hasOne(Restricciones);
-Persona.belongsTo(GrupoFamiliar);
 
 export default Persona;

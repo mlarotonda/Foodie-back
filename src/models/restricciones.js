@@ -1,14 +1,13 @@
-import { Sequelize, DataTypes } from "sequelize";
-import Persona from "./persona";
+import { Model, DataTypes } from "sequelize";
+import sequelize from "../connection/connection.js";
 
-const sequelize = new Sequelize("");
+class Restricciones extends Model {}
 
 // Definición del modelo Restricciones
-const Restricciones = sequelize.define(
-  "Restricciones",
+Restricciones.init(
   {
     restriccionesId: {
-      type: DataTypes.STRING,
+      type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true,
       autoIncrement: true,
@@ -35,10 +34,10 @@ const Restricciones = sequelize.define(
     },
   },
   {
+    sequelize,
     timestamps: false,
     tableName: "restricciones",
   }
 );
 
-Restricciones.belongsTo(Persona);
 export default Restricciones;
