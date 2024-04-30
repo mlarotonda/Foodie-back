@@ -7,9 +7,10 @@ const dbPassword = process.env.DB_PASSWORD;
 const dbHost = process.env.DB_HOST;
 const dbDialect = process.env.DB_DIALECT;
 const dbPort = process.env.DB_PORT;
+const apiKeyGemini = process.env.AI_API_KEY;
 
 const config = {
-    serverPort, dbName, dbUser, dbPassword, dbHost, dbDialect, dbPort
+    serverPort, dbName, dbUser, dbPassword, dbHost, dbDialect, dbPort, apiKeyGemini
 }
 
 export { config };
