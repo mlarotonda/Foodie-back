@@ -1,29 +1,34 @@
 // Importar Sequelize y configuración de la base de datos
-import { DataTypes, Sequelize } from "sequelize";
-const sequelize = new Sequelize(
-  "nombre-base-de-datos",
-  "usuario",
-  "contraseña",
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../connection/connection.js";
+
+class IngredienteStock extends Model {}
+
+IngredienteStock.init(
   {
-    host: "localhost",
-    dialect: "mysql",
+    IngredienteStockId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    IngredienteId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    StockId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    cantidad: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+  },
+  {
+    sequelize,
+    modelName: "IngredienteStock",
   }
 );
-
-const IngredienteStock = sequelize.define("IngredienteStock", {
-  IngredienteId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    autoIncrement: true,
-  },
-  StockId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-  cantidad: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-  },
-});
 
 export default IngredienteStock;

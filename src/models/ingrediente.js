@@ -1,31 +1,31 @@
-import { DataTypes, Sequelize } from "sequelize";
-import Receta from "./receta";
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../connection/connection.js";
 
-const sequelize = new Sequelize(
-  "nombre-base-de-datos",
-  "usuario",
-  "contraseña",
+class Ingrediente extends Model {}
+
+Ingrediente.init(
   {
-    host: "localhost",
-    dialect: "mysql",
+    ingredienteId: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    nombre: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    unidadMedida: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        isIn: [["Kilogramos", "Gramos", "Litros", "Mililitros"]],
+      },
+    },
+  },
+  {
+    sequelize,
+    modelName: "Ingrediente", // Nombre del modelo
   }
 );
-
-const Ingrediente = sequelize.define("Ingrediente", {
-  ingredienteId: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
-  nombre: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  unidadMedida: {
-    type: DataTypes.ENUM("Kilogramos", "Gramos", "Litros", "Mililitros"),
-  },
-});
-
-Ingrediente.belongsToMany(Receta, { through: IngredienteReceta });
 
 export default Ingrediente;

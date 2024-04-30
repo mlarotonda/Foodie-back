@@ -1,9 +1,10 @@
-import { Sequelize, DataTypes } from "sequelize";
-import Persona from "./persona";
-const sequelize = new Sequelize("");
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../connection/connection.js";
+import Persona from "./persona.js";
 
-const GrupoFamiliar = sequelize.define(
-  "GrupoFamiliar",
+class GrupoFamiliar extends Model {}
+
+GrupoFamiliar.init(
   {
     grupoFamiliarId: {
       type: DataTypes.INTEGER,
@@ -12,19 +13,19 @@ const GrupoFamiliar = sequelize.define(
       unique: true,
     },
     personaId: {
-      type: DataTypes.ARRAY(DataTypes.INTEGER),
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "Persona",
+        model: Persona,
         key: "personaId",
       },
     },
   },
   {
+    sequelize,
     timestamps: false,
-    tableName: "grupos_familiares",
+    modelName: "grupos_familiares",
   }
 );
-GrupoFamiliar.hasMany(Persona);
 
 export default GrupoFamiliar;

@@ -1,10 +1,10 @@
-import { Sequelize, DataTypes } from "sequelize";
-import IngredienteReceta from "./ingredienteReceta";
+import { Model, DataTypes } from "sequelize";
+import sequelize from "../connection/connection.js";
+import Ingrediente from "./ingrediente.js";
 
-const sequelize = new Sequelize("");
+class Receta extends Model {}
 
-const Receta = sequelize.define(
-  "Receta",
+Receta.init(
   {
     recetaId: {
       type: DataTypes.INTEGER,
@@ -33,24 +33,19 @@ const Receta = sequelize.define(
       },
     },
     ingredienteRecetaId: {
-      type: DataTypes.ARRAY(DataTypes.INTEGER),
-      defaultValue: [],
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "Ingredientes",
+        model: Ingrediente,
         key: "ingredienteId",
       },
     },
   },
   {
+    sequelize,
     timestamps: true,
-    tableName: "recetas",
+    modelName: "Receta",
   }
 );
-
-Receta.hasMany(Ingrediente, {
-  through: IngredienteReceta,
-  uniqueKey: "ingredienteRecetaId",
-});
 
 export default Receta;

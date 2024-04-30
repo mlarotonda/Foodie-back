@@ -1,9 +1,10 @@
-import { Sequelize, DataTypes } from "sequelize";
-import Usuario from "./usuario";
-const sequelize = new Sequelize("");
+import { Model, DataTypes } from "sequelize";
+import sequelize from "../connection/connection.js";
+import Receta from "./receta.js";
 
-const Recetario = sequelize.define(
-  "Recetario",
+class Recetario extends Model {}
+
+Recetario.init(
   {
     recetarioId: {
       type: DataTypes.INTEGER,
@@ -12,21 +13,19 @@ const Recetario = sequelize.define(
       autoIncrement: true,
     },
     recetaId: {
-      type: DataTypes.ARRAY(DataTypes.INTEGER),
-      defaultValue: [],
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "Receta",
+        model: Receta,
         key: "recetaId",
       },
     },
   },
   {
+    sequelize,
     timestamps: false,
-    tableName: "recetarios",
+    modelName: "Recetario",
   }
 );
-
-Recetario.belongsTo(Usuario);
 
 export default Recetario;

@@ -1,89 +1,77 @@
-import { DataTypes, Sequelize } from "sequelize";
-import Persona from "./persona";
-import GrupoFamiliar from "./grupoFamiliar";
-import Stock from "./stock";
-import Recetario from "./recetario";
-import Receta from "./receta";
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../connection/connection.js";
+import Recetario from "./recetario.js";
+import Persona from "./persona.js";
+import Stock from "./stock.js";
 
-const sequelize = new Sequelize(
-  "nombre-base-de-datos",
-  "usuario",
-  "contraseña",
+class Usuario extends Model {}
+
+Usuario.init(
   {
-    host: "localhost",
-    dialect: "mysql",
-  }
-);
-
-const Usuario = sequelize.define("Usuario", {
-  userId: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-    unique: true,
-  },
-  recetarioId: {
-    type: DataTypes.INTEGER,
-    references: {
-      model: "Recetario",
-      key: "recetarioId",
+    userId: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+      unique: true,
     },
-  },
-  historialId: {
-    type: DataTypes.JSON,
-  },
-  personaId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: "Persona",
-      key: "personaId",
+    recetarioId: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: Recetario,
+        key: "recetarioId",
+      },
     },
-  },
-  stockId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: "Stock",
-      key: "stockId",
+    historialId: {
+      type: DataTypes.UUID,
     },
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-    validate: {
-      isEmail: true,
+    personaId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: Persona,
+        key: "personaId",
+      },
     },
-    contrasena: {
+    stockId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: Stock,
+        key: "stockId",
+      },
+    },
+    email: {
       type: DataTypes.STRING,
       allowNull: false,
       validate: {
-        isSecurePassword(value) {
-          if (
-            !/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}/.test(
-              value
-            )
-          ) {
-            throw new Error(
-              "La contraseña debe contener al menos una mayúscula, un número, un carácter especial y tener una longitud mínima de 8 caracteres."
-            );
-          }
+        isEmail: true,
+      },
+      contrasena: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+          isSecurePassword(value) {
+            if (
+              !/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}/.test(
+                value
+              )
+            ) {
+              throw new Error(
+                "La contraseña debe contener al menos una mayúscula, un número, un carácter especial y tener una longitud mínima de 8 caracteres."
+              );
+            }
+          },
         },
       },
-    },
-    grupoFamiliarId: {
-      type: DataTypes.INTEGER,
+      grupoFamiliarId: {
+        type: DataTypes.INTEGER,
+      },
     },
   },
-});
-
-Usuario.hasOne(Persona);
-Usuario.hasOne(Stock);
-Usuario.hasOne(GrupoFamiliar);
-Usuario.hasMany(Receta, {
-  through: Recetario,
-  uniqueKey: "recetarioId",
-});
+  {
+    sequelize,
+    modelName: "Usuario",
+  }
+);
 
 export default Usuario;

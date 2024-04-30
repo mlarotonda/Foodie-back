@@ -1,6 +1,6 @@
-const Usuario = require('../models/usuario')
+import { Usuario } from "../models/index.js";
 
-const UserController = {
+class UserController {
   // Método para crear un nuevo usuario
   async crearUsuario(req, res) {
     try {
@@ -10,7 +10,7 @@ const UserController = {
       console.error("Error al crear el usuario:", error);
       res.status(500).json({ error: "Error al crear el usuario" });
     }
-  },
+  }
 
   // Método para eliminar un usuario por su ID
   async eliminarUsuario(req, res) {
@@ -26,7 +26,7 @@ const UserController = {
       console.error("Error al eliminar el usuario:", error);
       res.status(500).json({ error: "Error al eliminar el usuario" });
     }
-  },
+  }
 
   // Método para actualizar los datos de un usuario por su ID
   async actualizarUsuario(req, res) {
@@ -48,7 +48,7 @@ const UserController = {
       console.error("Error al actualizar el usuario:", error);
       res.status(500).json({ error: "Error al actualizar el usuario" });
     }
-  },
-};
+  }
+}
 
-module.exports = UserController;
+export default new UserController();
