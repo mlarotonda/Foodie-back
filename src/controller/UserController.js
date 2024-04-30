@@ -1,7 +1,8 @@
-import { User } from "../models/usuario.js"
+import User from "../models/User.js"
 
 const accessToken = "XXXXXX"
 
+//controller de ejemplo, despues borrar
 class UserController {
     constructor() { }
 
