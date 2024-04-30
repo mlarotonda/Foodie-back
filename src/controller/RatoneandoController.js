@@ -3,6 +3,7 @@ class RatoneandoController {
 
     getData = async (req, res) => {
         try {
+            //TODO
             const { userLogin, userPassword, nickName, email } = req.body;
             const newUser = await User.create({ userLogin, userPassword, nickName, email });
             res.status(200).send({ success: true, message: newUser });
