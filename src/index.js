@@ -1,11 +1,10 @@
 import express from "express";
 import router from "./routes/router.js";
 import sequelize from "./connection/connection.js";
-import { Recetario } from "./models/index.js";
 import { config } from "./config/config.js";
 
 const app = express();
-const port = 8080;
+const port = config.serverPort;
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*"); // Cambia '*' con tu dominio específico en producción
@@ -16,10 +15,9 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   next();
 });
+
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: false }));
-
 app.use("/api", router);
 
 app.use((req, res) => {
