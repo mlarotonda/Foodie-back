@@ -1,7 +1,8 @@
 import express from "express"
-import router from "./src/routes/router.js";
-import connection from "./src/connection/connection.js";
-import { config } from "./src/config/config.js";
+
+import router from "./routes/router.js";
+import connection from "./connection/connection.js";
+import { config } from "./config/config.js";
 import cors from "cors"
 
 const app = express();
