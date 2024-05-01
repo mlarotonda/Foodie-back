@@ -7,7 +7,7 @@ const dbPassword = process.env.DB_PASSWORD;
 const dbHost = process.env.DB_HOST;
 const dbDialect = process.env.DB_DIALECT;
 const dbPort = process.env.DB_PORT;
-const apiKeyGemini = process.env.AI_API_KEY;
+const apiKeyGemini = "AIzaSyDNyD_17Ltbh9lg-GWEH3lLDBUa9ArnbfE"; //queda hardcodeada porque sino no anda
 
 const config = {
     serverPort, dbName, dbUser, dbPassword, dbHost, dbDialect, dbPort, apiKeyGemini
