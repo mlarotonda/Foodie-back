@@ -22,7 +22,8 @@ Usuario.init(
       },
     },
     historialId: {
-      type: DataTypes.UUID,
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
     personaId: {
       type: DataTypes.INTEGER,

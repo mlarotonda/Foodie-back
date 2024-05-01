@@ -1,4 +1,4 @@
-import { Usuario } from "../models/index.js";
+import { Usuario, Receta } from "../models/index.js";
 
 class UserController {
   // Método para crear un nuevo usuario
@@ -47,6 +47,27 @@ class UserController {
     } catch (error) {
       console.error("Error al actualizar el usuario:", error);
       res.status(500).json({ error: "Error al actualizar el usuario" });
+    }
+  }
+  async crearReceta(req, res) {
+    try {
+      const { titulo, descripcion, instrucciones, puntuacion } = req.body;
+
+      if (!titulo || !descripcion || !instrucciones) {
+        return res
+          .status(400)
+          .json({ error: "Todos los campos son obligatorios" });
+      }
+      const nuevaReceta = await Receta.create({
+        titulo,
+        descripcion,
+        instrucciones,
+        puntuacion,
+      });
+      res.status(201).json({ receta: nuevaReceta });
+    } catch (error) {
+      console.error("Error al crear la receta:", error);
+      res.status(500).json({ error: "Error interno del servidor" });
     }
   }
 }
