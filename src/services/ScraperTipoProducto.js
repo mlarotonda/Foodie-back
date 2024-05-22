@@ -1,19 +1,15 @@
-
-//Es necesario correrlo 2 o 3 veces para que funcione correctamente en los 5 urls
-
-//REVISAR
-
 import puppeteer from 'puppeteer';
 
 async function scrapearTipoDeProducto(url)  {
     // Iniciar el navegador
     const browser = await puppeteer.launch({ headless: true });
+
     const page = await browser.newPage();
 
     await page.setViewport({ width: 1920, height: 1080 });
 
     // Navegar a la página
-    await page.goto(url, { waitUntil: 'networkidle2' });
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
 
     try {
         const items = await page.evaluate(() => {
