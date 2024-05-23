@@ -1,4 +1,4 @@
-import {model} from "../connection/GeminiApiConnection.js"
+/*import {model} from "../connection/GeminiApiConnection.js"
 
 async function run(prompt) {
   
@@ -11,3 +11,4 @@ async function run(prompt) {
   const prompt = "Dame tres recetas que tengan pollo,papa y cebolla de elgourmet.com en formato JSON con los campos {titulo, ingredientes, instrucciones}."
   
   run(prompt);
+*/

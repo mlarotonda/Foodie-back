@@ -1,10 +1,22 @@
 import express from "express";
+import mongoose from "mongoose";
 import router from "./routes/router.js";
-import sequelize from "./connection/connection.js";
 import { config } from "./config/config.js";
+import connectDB from "./connection/connection.js";
+
 
 const app = express();
 const port = config.serverPort;
+
+// Conexión a la base de datos MongoDB
+connectDB();
+
+const db = mongoose.connection;
+
+db.on("error", console.error.bind(console, "Error de conexión a la base de datos:"));
+db.once("open", () => {
+  console.log("Conexión exitosa a la base de datos MongoDB");
+});
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*"); // Cambia '*' con tu dominio específico en producción
@@ -28,8 +40,6 @@ app.get("/", (req, res) => {
   res.send("<h1>Hello world</h1>");
 });
 
-await sequelize.sync({ force: true });
-
 app.listen(port, () => {
-  console.log(`\nEl servidor esta funcionando en el puerto ${port}`);
+  console.log(`\nEl servidor está funcionando en el puerto ${port}`);
 });

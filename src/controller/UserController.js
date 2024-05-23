@@ -1,4 +1,5 @@
-import { Usuario, Receta } from "../models/index.js";
+import {Usuario} from "../models/usuario.js"
+import {Receta} from "../models/receta.js"
 
 class UserController {
   // Método para crear un nuevo usuario

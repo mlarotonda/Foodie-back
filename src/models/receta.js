@@ -14,31 +14,27 @@ const recetaSchema = new Schema(
       type: String,
       required: true,
     },
-    descripcion: {
-      type: String,
-      required: true,
-    },
     instrucciones: {
       type: String,
       required: true,
     },
     puntuacion: {
       type: Number,
-      required: true,
       min: 0,
       max: 5,
     },
     ingredientes: [
       {
-        type: Schema.Types.ObjectId,
-        ref: "Ingrediente",
-      },
-    ],
-    cantidad: [
-      {
-        type: Number,
-        required: true,
-      },
+        ingrediente: {
+          type: Schema.Types.ObjectId,
+          ref: "Ingrediente",
+          required: true,
+        },
+        cantidad: {
+          type: Number,
+          required: true,
+        },
+      }
     ],
   },
   { timestamps: true }
@@ -47,4 +43,4 @@ const recetaSchema = new Schema(
 // Creación del modelo Receta
 const Receta = mongoose.model("Receta", recetaSchema);
 
-export default Receta;
+export { Receta, recetaSchema};

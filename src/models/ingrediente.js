@@ -21,4 +21,4 @@ const ingredienteSchema = new Schema({
 // Crear el modelo de Ingrediente
 const Ingrediente = model("Ingrediente", ingredienteSchema);
 
-export default Ingrediente;
+export {Ingrediente, ingredienteSchema};

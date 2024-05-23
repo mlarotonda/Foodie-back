@@ -8,17 +8,21 @@ const stockSchema = new Schema({
       required: true,
       unique: true,
   },
-  ingrediente: {
-    type: Schema.Types.ObjectId,
-    ref: "Ingrediente",
-    required: true,
-  },
-  cantidad: {
-    type: Number,
-    required: true,
-  },
+  ingredientes: [
+    {
+      ingrediente: {
+        type: Schema.Types.ObjectId,
+        ref: "Ingrediente",
+        required: true,
+      },
+      cantidad: {
+        type: Number,
+        required: true,
+      },
+    }
+  ],
 });
 
 const Stock = model("Stock", stockSchema);
 
-export default Stock;
+export { Stock, stockSchema};

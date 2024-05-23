@@ -8,6 +8,7 @@ const dbHost = process.env.DB_HOST;
 const dbDialect = process.env.DB_DIALECT;
 const dbPort = process.env.DB_PORT;
 const apiKeyGemini = process.env.API_KEY_GEMINI;
+const linkMongoDb = process.env.LINK_MONGO;
 
 const config = {
   serverPort,
@@ -18,6 +19,7 @@ const config = {
   dbDialect,
   dbPort,
   apiKeyGemini,
+  linkMongoDb
 };
 
 export { config };

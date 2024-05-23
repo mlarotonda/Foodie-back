@@ -6,8 +6,8 @@ const { Schema } = mongoose;
 const personaSchema = new Schema(
   {
     personaId: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
+      type: Number,
+      required: true,
       unique: true,
     },
     nombre: {
@@ -31,10 +31,9 @@ const personaSchema = new Schema(
       ref: "Restricciones",
     },
   },
-  { collection: "personas" }
 );
 
 // Creación del modelo Persona
 const Persona = mongoose.model("Persona", personaSchema);
 
-export default Persona;
+export { Persona, personaSchema };

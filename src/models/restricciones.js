@@ -38,4 +38,4 @@ const restriccionesSchema = new Schema(
 
 const Restricciones = mongoose.model("Restricciones", restriccionesSchema);
 
-export default Restricciones;
+export { Restricciones, restriccionesSchema };

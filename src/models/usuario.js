@@ -58,4 +58,4 @@ const usuarioSchema = new Schema({
 // Crear el modelo de Usuario
 const Usuario = model("Usuario", usuarioSchema);
 
-export default Usuario;
+export { Usuario, usuarioSchema};
