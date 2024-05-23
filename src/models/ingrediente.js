@@ -1,31 +1,24 @@
-import { DataTypes, Model } from "sequelize";
-import sequelize from "../connection/connection.js";
+import mongoose, { model } from "mongoose";
+const { Schema } = mongoose;
 
-class Ingrediente extends Model {}
-
-Ingrediente.init(
-  {
-    ingredienteId: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
-    nombre: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    unidadMedida: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      validate: {
-        isIn: [["Kilogramos", "Gramos", "Litros", "Mililitros"]],
-      },
-    },
+const ingredienteSchema = new Schema({
+  ingredienteId: {
+    type: Number,
+    required: true,
+    unique: true,
   },
-  {
-    sequelize,
-    modelName: "Ingrediente", // Nombre del modelo
-  }
-);
+  nombre: {
+    type: String,
+    required: true,
+  },
+  unidadMedida: {
+    type: String,
+    required: true,
+    enum: ["Kilogramos", "Gramos", "Litros", "Mililitros", "Cucharadas"], // Validación para restringir los valores permitidos
+  },
+});
+
+// Crear el modelo de Ingrediente
+const Ingrediente = model("Ingrediente", ingredienteSchema);
 
 export default Ingrediente;

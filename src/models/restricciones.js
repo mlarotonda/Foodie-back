@@ -1,43 +1,41 @@
-import { Model, DataTypes } from "sequelize";
-import sequelize from "../connection/connection.js";
+import mongoose from "mongoose";
 
-class Restricciones extends Model {}
+const { Schema } = mongoose;
 
-// Definición del modelo Restricciones
-Restricciones.init(
+const restriccionesSchema = new Schema(
   {
     restriccionesId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      primaryKey: true,
-      autoIncrement: true,
+      type: Number,
+      required: true,
+      unique: true,
     },
     celiaco: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+      type: Boolean,
+      required: true,
     },
     embarazo: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+      type: Boolean,
+      required: true,
     },
     vegetariano: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+      type: Boolean,
+      required: true,
     },
     vegano: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+      type: Boolean,
+      required: true,
     },
     intoleranteLactosa: {
-      type: DataTypes.BOOLEAN,
-      allowNull: false,
+      type: Boolean,
+      required: true,
     },
   },
   {
-    sequelize,
     timestamps: false,
-    tableName: "restricciones",
+    collection: "restricciones", // Collection name in MongoDB
   }
 );
+
+const Restricciones = mongoose.model("Restricciones", restriccionesSchema);
 
 export default Restricciones;

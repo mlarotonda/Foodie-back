@@ -1,51 +1,50 @@
-import { Model, DataTypes } from "sequelize";
-import sequelize from "../connection/connection.js";
-import Ingrediente from "./ingrediente.js";
+import mongoose from "mongoose";
 
-class Receta extends Model {}
+const { Schema } = mongoose;
 
-Receta.init(
+// Definición del esquema para la Receta
+const recetaSchema = new Schema(
   {
     recetaId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      primaryKey: true,
-      autoIncrement: true,
+      type: Number,
+      required: true,
+      unique: true,
     },
     titulo: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     descripcion: {
-      type: DataTypes.TEXT,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     instrucciones: {
-      type: DataTypes.TEXT,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     puntuacion: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      validate: {
-        min: 0,
-        max: 5,
-      },
+      type: Number,
+      required: true,
+      min: 0,
+      max: 5,
     },
-    ingredienteRecetaId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: Ingrediente,
-        key: "ingredienteId",
+    ingredientes: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Ingrediente",
       },
-    },
+    ],
+    cantidad: [
+      {
+        type: Number,
+        required: true,
+      },
+    ],
   },
-  {
-    sequelize,
-    timestamps: true,
-    modelName: "Receta",
-  }
+  { timestamps: true }
 );
+
+// Creación del modelo Receta
+const Receta = mongoose.model("Receta", recetaSchema);
 
 export default Receta;

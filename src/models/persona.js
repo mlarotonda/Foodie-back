@@ -1,46 +1,40 @@
-import { Model, DataTypes } from "sequelize";
-import sequelize from "../connection/connection.js";
+import mongoose from "mongoose";
 
-class Persona extends Model {}
+const { Schema } = mongoose;
 
-Persona.init(
+// Definición del esquema para Persona
+const personaSchema = new Schema(
   {
     personaId: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       unique: true,
-      autoIncrement: true,
     },
     nombre: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     apellido: {
-      type: DataTypes.STRING,
-      allowNull: false,
+      type: String,
+      required: true,
     },
     edad: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
+      type: Number,
+      required: true,
     },
     nacionalidad: {
-      type: DataTypes.STRING,
-      allowNull: true,
+      type: String,
+      default: null,
     },
-    restriccionesId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: "Restricciones",
-        key: "restriccionesId",
-      },
+    restricciones: {
+      type: Schema.Types.ObjectId,
+      ref: "Restricciones",
     },
   },
-  {
-    sequelize,
-    timestamps: false,
-    tableName: "personas",
-  }
+  { collection: "personas" }
 );
+
+// Creación del modelo Persona
+const Persona = mongoose.model("Persona", personaSchema);
 
 export default Persona;

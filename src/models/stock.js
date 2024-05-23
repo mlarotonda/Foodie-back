@@ -1,23 +1,24 @@
-import sequelize from "../connection/connection.js";
-import { Model, DataTypes } from "sequelize";
+import { Schema as _Schema, model } from "mongoose";
 
-class Stock extends Model {}
+const Schema = _Schema;
 
-Stock.init(
-  {
-    stockId: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-    },
-    IngredienteStockId: {
-      type: DataTypes.INTEGER,
-    },
+const stockSchema = new Schema({
+  stockId: {
+      type: Number,
+      required: true,
+      unique: true,
   },
-  {
-    sequelize,
-    modelName: "Stock",
-  }
-);
+  ingrediente: {
+    type: Schema.Types.ObjectId,
+    ref: "Ingrediente",
+    required: true,
+  },
+  cantidad: {
+    type: Number,
+    required: true,
+  },
+});
+
+const Stock = model("Stock", stockSchema);
 
 export default Stock;
