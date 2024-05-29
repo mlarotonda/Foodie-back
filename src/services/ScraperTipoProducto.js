@@ -1,6 +1,5 @@
 import puppeteer from "puppeteer";
 import admin from "firebase-admin";
-import serviceAccount from "../../foodie-1614e-firebase-adminsdk-c4q8s-66a1d5f141.json" assert { type: "json" };
 
 // Inicializar Firebase
 admin.initializeApp({
