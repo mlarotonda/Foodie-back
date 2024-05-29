@@ -1,32 +1,14 @@
 import express from "express";
-import mongoose from "mongoose";
 import router from "./routes/router.js";
 import { config } from "./config/config.js";
-import connectDB from "./connection/connection.js";
+import { firebase } from "./connection/connection.js";
 
 
 const app = express();
 const port = config.serverPort;
 
-// Conexión a la base de datos MongoDB
-connectDB();
-
-const db = mongoose.connection;
-
-db.on("error", console.error.bind(console, "Error de conexión a la base de datos:"));
-db.once("open", () => {
-  console.log("Conexión exitosa a la base de datos MongoDB");
-});
-
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*"); // Cambia '*' con tu dominio específico en producción
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  next();
-});
+// Conexión a firebase
+console.log("Firebase app initialized:", firebase);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
