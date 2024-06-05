@@ -2,6 +2,17 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
+const RestriccionesEnum = {
+  CELIACO: 'celiaco',
+  EMBARAZADA: 'embarazada',
+  VEGETARIANO: 'vegetariano',
+  VEGANO: 'vegano',
+  DIABETES: 'diabetes',
+  KOSHER: 'kosher',
+  HIPERTENSION: 'hipertension',
+  INTOLERANTE_LACTOSA: 'intolerante lactosa'
+};
+
 // Definición del esquema para Persona
 const personaSchema = new Schema(
   {
@@ -27,8 +38,9 @@ const personaSchema = new Schema(
       default: null,
     },
     restricciones: {
-      type: Schema.Types.ObjectId,
-      ref: "Restricciones",
+      type: [String],
+      enum: Object.values(RestriccionesEnum),
+      default: []
     },
   },
 );
