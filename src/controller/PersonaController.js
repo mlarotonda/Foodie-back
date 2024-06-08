@@ -1,24 +1,25 @@
-// personaController.js
-import { db } from './config/firebaseConfig';
-import { collection, addDoc, getDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import { db } from "../connection/connection.js";
+import { v4 as uuidv4 } from "uuid";
 
 const RestriccionesEnum = {
-  CELIACO: 'celiaco',
-  EMBARAZADA: 'embarazada',
-  VEGETARIANO: 'vegetariano',
-  VEGANO: 'vegano',
-  DIABETES: 'diabetes',
-  KOSHER: 'kosher',
-  HIPERTENSION: 'hipertension',
-  INTOLERANTE_LACTOSA: 'intolerante lactosa'
+  CELIACO: "celiaco",
+  EMBARAZADA: "embarazada",
+  VEGETARIANO: "vegetariano",
+  VEGANO: "vegano",
+  DIABETES: "diabetes",
+  KOSHER: "kosher",
+  HIPERTENSION: "hipertension",
+  INTOLERANTE_LACTOSA: "intolerante lactosa",
 };
 
 const validarPersona = (persona) => {
-  if (typeof persona.nombre !== 'string' || persona.nombre.trim() === '') {
+  if (typeof persona.nombre !== "string" || persona.nombre.trim() === "") {
     throw new Error("El nombre es obligatorio y debe ser una cadena no vacía.");
   }
-  if (typeof persona.apellido !== 'string' || persona.apellido.trim() === '') {
-    throw new Error("El apellido es obligatorio y debe ser una cadena no vacía.");
+  if (typeof persona.apellido !== "string" || persona.apellido.trim() === "") {
+    throw new Error(
+      "El apellido es obligatorio y debe ser una cadena no vacía."
+    );
   }
   if (!Number.isInteger(persona.edad) || persona.edad <= 0) {
     throw new Error("La edad debe ser un número entero positivo.");
@@ -26,7 +27,7 @@ const validarPersona = (persona) => {
   if (!Array.isArray(persona.restricciones)) {
     throw new Error("Las restricciones deben ser un array.");
   }
-  persona.restricciones.forEach(restriccion => {
+  persona.restricciones.forEach((restriccion) => {
     if (!Object.values(RestriccionesEnum).includes(restriccion)) {
       throw new Error(`Restricción no válida: ${restriccion}`);
     }
@@ -34,74 +35,96 @@ const validarPersona = (persona) => {
 };
 
 // Crear una nueva persona
-const crearPersona = async (persona) => {
-    try {
-        // Obtener todas las recetas
-        const personasSnapshot = await getDocs(collection(db, "personas"));
-        const personas = personasSnapshot.docs.map(doc => (doc.data()));
-    
-        // Generar nuevo recetaId
-        let newId = persona.length + 1;
-        
-        // Validar que el nuevo recetaId no esté en uso
-        while (persona.some(p => p.personaId === newId)) {
-          newId++;
-        }
-        
-        persona.personaId = newId;
-    
-        validarReceta(persona);
-        
-        const docRef = await addDoc(collection(db, "personas"), persona);
-        console.log("Documento escrito con ID: ", docRef.id);
-      } catch (e) {
-        console.error("Error al agregar el documento: ", e.message);
-      }
-    };
-// Obtener una persona por ID
-const obtenerPersona = async (id) => {
-  const docRef = doc(db, "personas", id);
-  const docSnap = await getDoc(docRef);
+const crearPersona = async (req, res) => {
+  const persona = req.body;
 
-  if (docSnap.exists()) {
-    return docSnap.data();
-  } else {
-    console.log("No se encontró el documento!");
-    return null;
+  try {
+    validarPersona(persona);
+
+    // Genera un nuevo ID único para la persona
+    persona.personaId = uuidv4();
+
+    const docRef = db.collection("personas").doc(persona.personaId);
+    await docRef.set(persona);
+    console.log("Documento escrito con ID: ", persona.personaId);
+    res.status(201).json({ id: persona.personaId, ...persona });
+  } catch (e) {
+    console.error("Error al agregar el documento: ", e.message);
+    res.status(400).json({ error: e.message });
+  }
+};
+
+// Obtener una persona por ID
+const obtenerPersona = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const docRef = db.collection("personas").doc(id);
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      res.status(200).json(docSnap.data());
+    } else {
+      console.log("No se encontró el documento!");
+      res.status(404).json({ error: "Persona no encontrada" });
+    }
+  } catch (e) {
+    console.error("Error al obtener el documento: ", e.message);
+    res.status(500).json({ error: e.message });
   }
 };
 
 // Obtener todas las personas
-const obtenerPersonas = async () => {
-  const querySnapshot = await getDocs(collection(db, "personas"));
-  const personas = [];
-  querySnapshot.forEach((doc) => {
-    personas.push({ id: doc.id, ...doc.data() });
-  });
-  return personas;
+const obtenerPersonas = async (req, res) => {
+  try {
+    const querySnapshot = await db.collection("personas").get();
+    const personas = [];
+    querySnapshot.forEach((doc) => {
+      personas.push({ id: doc.id, ...doc.data() });
+    });
+    res.status(200).json(personas);
+  } catch (e) {
+    console.error("Error al obtener los documentos: ", e.message);
+    res.status(500).json({ error: e.message });
+  }
 };
 
 // Actualizar una persona
-const actualizarPersona = async (id, personaActualizada) => {
+const actualizarPersona = async (req, res) => {
+  const { id } = req.params;
+  const personaActualizada = req.body;
+
   try {
     validarPersona(personaActualizada);
-    const docRef = doc(db, "personas", id);
-    await updateDoc(docRef, personaActualizada);
+    const docRef = db.collection("personas").doc(id);
+    await docRef.update(personaActualizada);
     console.log("Documento actualizado con éxito");
+    res.status(200).json({ id, ...personaActualizada });
   } catch (e) {
     console.error("Error al actualizar el documento: ", e.message);
+    res.status(400).json({ error: e.message });
   }
 };
 
 // Eliminar una persona
-const eliminarPersona = async (id) => {
-  const docRef = doc(db, "personas", id);
+const eliminarPersona = async (req, res) => {
+  const { id } = req.params;
+
   try {
-    await deleteDoc(docRef);
+    const docRef = db.collection("personas").doc(id);
+    await docRef.delete();
     console.log("Documento eliminado con éxito");
+    res.status(200).json({ message: "Persona eliminada con éxito" });
   } catch (e) {
-    console.error("Error al eliminar el documento: ", e);
+    console.error("Error al eliminar el documento: ", e.message);
+    res.status(500).json({ error: e.message });
   }
 };
 
-export default new PersonaController();
+export {
+  crearPersona,
+  obtenerPersona,
+  obtenerPersonas,
+  actualizarPersona,
+  eliminarPersona,
+};

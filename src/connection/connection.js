@@ -1,28 +1,27 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-//import { getAnalytics } from "firebase/analytics";
-import { config } from "../config/config.js";
-import { getFirestore } from "firebase/firestore";
+import admin from "firebase-admin";
+import { pathToFileURL } from "url";
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+// Convierte la ruta del archivo de credenciales a una URL válida
+const serviceAccountPath = pathToFileURL(
+  "C:/Users/pesta/OneDrive/Escritorio/foodie-fb.json"
+).href;
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: config.apiKeyFirebase,
-  authDomain: config.authDomain,
-  projectId: config.projetctId,
-  storageBucket: config.storageBucket,
-  messagingSenderId: config.messagingSenderId,
-  appId: config.appId,
-  measurementId: config.measurementId
-};
+async function initializeFirebase() {
+  const serviceAccount = await import(serviceAccountPath, {
+    assert: { type: "json" },
+  });
 
-// Initialize Firebase
-const firebase = initializeApp(firebaseConfig);
-const db = getFirestore(firebase);
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount.default), 
+    databaseURL: "https://Foodie.firebaseio.com",
+  });
 
-//const analytics = getAnalytics(app);
+  const db = admin.firestore();
+  return { db, admin };
+}
 
-export {firebase, db};
+const firebaseServices = await initializeFirebase();
+const db = firebaseServices.db;
+const firebaseAdmin = firebaseServices.admin;
+
+export { db, firebaseAdmin as admin };
