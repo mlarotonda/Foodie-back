@@ -1,14 +1,13 @@
 import express from "express";
 import router from "./routes/router.js";
 import { config } from "./config/config.js";
-import { firebase } from "./connection/connection.js";
-
+import { db } from "./connection/connection.js"; // Asegúrate de importar correctamente
 
 const app = express();
 const port = config.serverPort;
 
-// Conexión a firebase
-console.log("Firebase app initialized:", firebase);
+// Conexión a Firebase
+console.log("Firebase app initialized:", db);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
