@@ -1,8 +1,8 @@
 import { Router } from "express";
-import GeminiController from "../controller/GeminiController.js";
+import GeminiController2 from "../controller/GeminiController2.js";
 
 const router = Router();
 
-router.get("/", GeminiController.getRecipes);
+router.get("/", GeminiController2.getRecipes);
 
 export default router;
