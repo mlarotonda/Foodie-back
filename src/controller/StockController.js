@@ -13,8 +13,15 @@ const validarProducto = (producto) => {
   }
 };
 
+const validarProductoParaConsumo = (producto) => {
+  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
+    throw new Error(
+      "La cantidad del producto debe ser un número entero positivo."
+    );
+  }
+};
+
 class StockController {
-  // Añadir un producto al stock del usuario usando el EAN
   async añadirProductoPorEAN(req, res) {
     const { userId } = req.params;
     const { ean, unidad, cantidad } = req.body;
@@ -48,7 +55,19 @@ class StockController {
         .doc(userId)
         .collection("stock")
         .doc(nombreProducto);
-      await productoRef.set({ cantidad, unidad, timestamp });
+
+      const docSnap = await productoRef.get();
+
+      if (docSnap.exists) {
+        const productoExistente = docSnap.data();
+        await productoRef.update({
+          cantidad: productoExistente.cantidad + cantidad,
+          unidad,
+          timestamp,
+        });
+      } else {
+        await productoRef.set({ cantidad, unidad, timestamp });
+      }
 
       console.log(
         `Producto ${nombreProducto} añadido al stock del usuario ${userId}.`
@@ -62,13 +81,12 @@ class StockController {
     }
   }
 
-  // Añadir un producto al stock del usuario usando el nombre del producto
   async añadirProductoPorNombre(req, res) {
-    const { userId, nombreProducto } = req.params;
-    const { unidad, cantidad } = req.body;
+    const { userId } = req.params;
+    const { unidad, cantidad, nombreProducto } = req.body;
 
     try {
-      validarProducto({ nombre: nombreProducto, unidad, cantidad });
+      validarProducto({ unidad, cantidad });
 
       const timestamp = new Date().toISOString();
 
@@ -77,7 +95,19 @@ class StockController {
         .doc(userId)
         .collection("stock")
         .doc(nombreProducto);
-      await productoRef.set({ cantidad, unidad, timestamp });
+
+      const docSnap = await productoRef.get();
+
+      if (docSnap.exists) {
+        const productoExistente = docSnap.data();
+        await productoRef.update({
+          cantidad: productoExistente.cantidad + cantidad,
+          unidad,
+          timestamp,
+        });
+      } else {
+        await productoRef.set({ cantidad, unidad, timestamp });
+      }
 
       console.log(
         `Producto ${nombreProducto} añadido al stock del usuario ${userId}.`
@@ -91,7 +121,6 @@ class StockController {
     }
   }
 
-  // Obtener el stock del usuario
   async obtenerStock(req, res) {
     const { userId } = req.params;
 
@@ -113,7 +142,6 @@ class StockController {
     }
   }
 
-  // Obtener un producto específico del stock del usuario
   async obtenerProducto(req, res) {
     const { userId, nombreProducto } = req.params;
 
@@ -136,13 +164,12 @@ class StockController {
     }
   }
 
-  // Actualizar un producto en el stock del usuario
   async actualizarProducto(req, res) {
     const { userId, nombreProducto } = req.params;
     const { unidad, cantidad } = req.body;
 
     try {
-      validarProducto({ nombre: nombreProducto, unidad, cantidad });
+      validarProducto({ unidad, cantidad });
 
       const productoRef = db
         .collection("usuarios")
@@ -158,18 +185,15 @@ class StockController {
       console.log(
         `Producto ${nombreProducto} actualizado en el stock del usuario ${userId}.`
       );
-      res
-        .status(200)
-        .json({
-          message: `Producto ${nombreProducto} actualizado en el stock.`,
-        });
+      res.status(200).json({
+        message: `Producto ${nombreProducto} actualizado en el stock.`,
+      });
     } catch (e) {
       console.error("Error al actualizar el producto en el stock: ", e.message);
       res.status(400).json({ error: e.message });
     }
   }
 
-  // Eliminar un producto del stock del usuario
   async eliminarProducto(req, res) {
     const { userId, nombreProducto } = req.params;
 
@@ -190,6 +214,59 @@ class StockController {
     } catch (e) {
       console.error("Error al eliminar el producto del stock: ", e.message);
       res.status(500).json({ error: e.message });
+    }
+  }
+
+  async consumirProductos(req, res) {
+    const { userId } = req.params;
+    const { ingredientes } = req.body; // Array de objetos { nombreProducto, cantidad }
+
+    try {
+      for (const ingrediente of ingredientes) {
+        const { nombreProducto, cantidad } = ingrediente;
+
+        validarProductoParaConsumo({ cantidad });
+
+        const productoRef = db
+          .collection("usuarios")
+          .doc(userId)
+          .collection("stock")
+          .doc(nombreProducto);
+
+        const docSnap = await productoRef.get();
+
+        if (docSnap.exists) {
+          const productoExistente = docSnap.data();
+          const nuevaCantidad = productoExistente.cantidad - cantidad;
+
+          if (nuevaCantidad === 0 || nuevaCantidad < 0) {
+            await productoRef.delete();
+            console.log(
+              `Producto ${nombreProducto} eliminado del stock del usuario ${userId}.`
+            );
+          } else {
+            await productoRef.update({
+              cantidad: nuevaCantidad,
+              timestamp: new Date().toISOString(),
+            });
+            console.log(
+              `Producto ${nombreProducto} actualizado en el stock del usuario ${userId}.`
+            );
+          }
+        } else {
+          return res.status(404).json({
+            error: `Producto ${nombreProducto} no encontrado en el stock.`,
+          });
+        }
+      }
+
+      console.log(`Productos consumidos del stock del usuario ${userId}.`);
+      res.status(200).json({
+        message: `Productos consumidos del stock del usuario ${userId}.`,
+      });
+    } catch (e) {
+      console.error("Error al consumir productos del stock: ", e.message);
+      res.status(400).json({ error: e.message });
     }
   }
 }
