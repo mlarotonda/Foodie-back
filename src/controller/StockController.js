@@ -23,7 +23,7 @@ const validarProductoParaConsumo = (producto) => {
 
 class StockController {
   async añadirProductoPorEAN(req, res) {
-    const { userId } = req.params;
+    const userId = req.userId;
     const { ean, unidad, cantidad } = req.body;
 
     try {
@@ -52,7 +52,7 @@ class StockController {
 
       const productoRef = db
         .collection("usuarios")
-        .doc(userId)
+        .doc(String(userId)) // Convert userId to string
         .collection("stock")
         .doc(nombreProducto);
 
@@ -82,7 +82,7 @@ class StockController {
   }
 
   async añadirProductoPorNombre(req, res) {
-    const { userId } = req.params;
+    const userId = req.userId;
     const { unidad, cantidad, nombreProducto } = req.body;
 
     try {
@@ -92,7 +92,7 @@ class StockController {
 
       const productoRef = db
         .collection("usuarios")
-        .doc(userId)
+        .doc(String(userId)) // Convert userId to string
         .collection("stock")
         .doc(nombreProducto);
 
@@ -122,12 +122,12 @@ class StockController {
   }
 
   async obtenerStock(req, res) {
-    const { userId } = req.params;
+    const userId = req.userId;
 
     try {
       const stockSnapshot = await db
         .collection("usuarios")
-        .doc(userId)
+        .doc(String(userId)) // Convert userId to string
         .collection("stock")
         .get();
       const stock = stockSnapshot.docs.map((doc) => ({
@@ -143,12 +143,13 @@ class StockController {
   }
 
   async obtenerProducto(req, res) {
-    const { userId, nombreProducto } = req.params;
+    const userId = req.userId;
+    const { nombreProducto } = req.params;
 
     try {
       const productoRef = db
         .collection("usuarios")
-        .doc(userId)
+        .doc(String(userId)) // Convert userId to string
         .collection("stock")
         .doc(nombreProducto);
       const docSnap = await productoRef.get();
@@ -165,7 +166,8 @@ class StockController {
   }
 
   async actualizarProducto(req, res) {
-    const { userId, nombreProducto } = req.params;
+    const userId = req.userId;
+    const { nombreProducto } = req.params;
     const { unidad, cantidad } = req.body;
 
     try {
@@ -173,7 +175,7 @@ class StockController {
 
       const productoRef = db
         .collection("usuarios")
-        .doc(userId)
+        .doc(String(userId)) // Convert userId to string
         .collection("stock")
         .doc(nombreProducto);
       await productoRef.update({
@@ -195,12 +197,13 @@ class StockController {
   }
 
   async eliminarProducto(req, res) {
-    const { userId, nombreProducto } = req.params;
+    const userId = req.userId;
+    const { nombreProducto } = req.params;
 
     try {
       const productoRef = db
         .collection("usuarios")
-        .doc(userId)
+        .doc(String(userId)) // Convert userId to string
         .collection("stock")
         .doc(nombreProducto);
       await productoRef.delete();
@@ -218,8 +221,8 @@ class StockController {
   }
 
   async consumirProductos(req, res) {
-    const { userId } = req.params;
-    const { ingredientes } = req.body; // Array de objetos { nombreProducto, cantidad }
+    const userId = req.userId;
+    const { ingredientes } = req.body;
 
     try {
       for (const ingrediente of ingredientes) {
@@ -229,7 +232,7 @@ class StockController {
 
         const productoRef = db
           .collection("usuarios")
-          .doc(userId)
+          .doc(String(userId)) // Convert userId to string
           .collection("stock")
           .doc(nombreProducto);
 

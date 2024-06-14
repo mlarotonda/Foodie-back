@@ -1,6 +1,8 @@
 import { db } from "../connection/connection.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
+import config  from "../config/config.js";
 
 const saltRounds = 10;
 
@@ -76,7 +78,6 @@ const generarIdPersona = (nombre, apellido) => {
 };
 
 class UserController {
-  // Crear un nuevo usuario
   async crearUsuario(req, res) {
     const { mail, password, nombre, apellido, edad, restricciones } = req.body;
 
@@ -85,10 +86,8 @@ class UserController {
       const persona = { nombre, apellido, edad, restricciones };
       validarPersona(persona);
 
-      // Obtener el nuevo ID incremental para el usuario
       const userId = await obtenerYActualizarContadorID("usuarioId");
 
-      // Generar el ID de la persona
       const personaId = generarIdPersona(nombre, apellido);
 
       // Hashear la contraseña
@@ -123,6 +122,37 @@ class UserController {
     } catch (e) {
       console.error("Error al crear el usuario: ", e.message);
       res.status(400).json({ error: e.message });
+    }
+  }
+
+  // Autenticar usuario y generar token
+  async autenticarUsuario(req, res) {
+    const { mail, password } = req.body;
+
+    try {
+      const userRef = db.collection("usuarios").where("mail", "==", mail);
+      const userSnap = await userRef.get();
+
+      if (userSnap.empty) {
+        return res.status(404).json({ error: "Usuario no encontrado." });
+      }
+
+      const user = userSnap.docs[0].data();
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "Contraseña incorrecta." });
+      }
+
+      // Crear un token con el ID del usuario y una fecha de expiración
+      const token = jwt.sign({ id: user.userId }, config.secretKey, {
+        expiresIn: "1h", // El token expira en 1 hora
+      });
+
+      res.status(200).json({ auth: true, token });
+    } catch (e) {
+      console.error("Error al autenticar el usuario: ", e.message);
+      res.status(500).json({ error: e.message });
     }
   }
 
@@ -182,6 +212,37 @@ class UserController {
       res.status(200).json(usuarios);
     } catch (e) {
       console.error("Error al obtener los usuarios: ", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  }
+
+  // Autenticar usuario y generar token
+  async login(req, res) {
+    const { mail, password } = req.body;
+
+    try {
+      const userRef = db.collection("usuarios").where("mail", "==", mail);
+      const userSnap = await userRef.get();
+
+      if (userSnap.empty) {
+        return res.status(404).json({ error: "Usuario no encontrado." });
+      }
+
+      const user = userSnap.docs[0].data();
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "Contraseña incorrecta." });
+      }
+
+      // Crear un token con el ID del usuario y una fecha de expiración
+      const token = jwt.sign({ id: user.userId }, config.secretKey, {
+        expiresIn: "1h", // El token expira en 1 hora
+      });
+
+      res.status(200).json({ auth: true, token });
+    } catch (e) {
+      console.error("Error al autenticar el usuario: ", e.message);
       res.status(500).json({ error: e.message });
     }
   }

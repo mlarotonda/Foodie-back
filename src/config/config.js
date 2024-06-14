@@ -10,6 +10,7 @@ const serverPort = process.env.SERVER_PORT;
 const apiKeyGemini = process.env.API_KEY_GEMINI;
 const linkMongoDb = process.env.LINK_MONGO;
 const measurementId = process.env.MEASURENT_ID;
+const secretKey = process.env.SECRET_KEY;
 
 const config = {
   apiKeyFirebase,
@@ -21,7 +22,8 @@ const config = {
   measurementId,
   serverPort,
   apiKeyGemini,
-  linkMongoDb
+  linkMongoDb,
+  secretKey
 };
 
-export { config };
+export default config;
