@@ -1,18 +1,9 @@
 import admin from "firebase-admin";
-import { pathToFileURL } from "url";
-
-// Convierte la ruta del archivo de credenciales a una URL válida
-const serviceAccountPath = pathToFileURL(
-  "C:/Users/pesta/OneDrive/Escritorio/foodie-fb.json"
-).href;
+import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: "json" };
 
 async function initializeFirebase() {
-  const serviceAccount = await import(serviceAccountPath, {
-    assert: { type: "json" },
-  });
-
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount.default), 
+    credential: admin.credential.cert(serviceAccount), 
     databaseURL: "https://Foodie.firebaseio.com",
   });
 

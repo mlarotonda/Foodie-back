@@ -1,6 +1,11 @@
 import puppeteer from 'puppeteer';
 import admin from 'firebase-admin';
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: "json" };
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { config } from '../config/config.js';
+
+//const api = 'AIzaSyBlAsyyszW8nOtxZt-RDHNYX-lqnHoiX3s';
+const api = 'AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw';
 
 // Inicializar Firebase
 admin.initializeApp({
@@ -9,52 +14,107 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
+// Inicializar Google Generative AI
+const genAI = new GoogleGenerativeAI(api);
+const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+
+async function determinarUnidad(item) {
+  console.log(`Ingresando al método determinarUnidad para el producto: ${item}`);
+
+  const prompt = `Dime si la unidad de medida para el producto "${item}" debe ser gramos o mililitros. Responde solo con "gramos" o "mililitros".`;
+
+  let unidad = 'unidad'; // Valor predeterminado si la API no proporciona una respuesta válida
+
+  while (unidad === 'unidad') {
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = await response.text();
+      const posibleUnidad = text.trim().toLowerCase();
+
+      if (posibleUnidad === 'gramos' || posibleUnidad === 'mililitros') {
+        unidad = posibleUnidad;
+      } else {
+        console.log(`Respuesta inválida recibida: ${posibleUnidad}. Reintentando...`);
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Espera 5 segundos antes de reintentar en caso de respuesta inválida
+      }
+    } catch (error) {
+      if (error.status === 429) {
+        console.error(`Límite de cuota excedido para el producto "${item}". Esperando 60 segundos...`);
+        await new Promise(resolve => setTimeout(resolve, 60000)); // Espera 60 segundos antes de reintentar
+      } else {
+        console.error(`Error al consultar la API de Gemini para el producto "${item}":`, error);
+        await new Promise(resolve => setTimeout(resolve, 5000)); // Espera 5 segundos antes de reintentar en caso de otros errores
+      }
+    }
+  }
+  
+  return unidad;
+}
+
+
+async function obtenerItems(page) {
+  return await page.evaluate(async () => {
+    const texts = [];
+    const filterContents = document.querySelectorAll('.valtech-carrefourar-search-result-0-x-filterContent');
+    const lastFilterContent = filterContents[filterContents.length - 1];
+
+    if (lastFilterContent) {
+      let seeMoreButton = lastFilterContent.querySelector('.valtech-carrefourar-search-result-0-x-seeMoreButton');
+      let filterItems = lastFilterContent.querySelectorAll('.valtech-carrefourar-search-result-0-x-filterItem label');
+
+      while (seeMoreButton && filterItems.length <= 20) {
+        seeMoreButton.click();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        filterItems = lastFilterContent.querySelectorAll('.valtech-carrefourar-search-result-0-x-filterItem label');
+        seeMoreButton = lastFilterContent.querySelector('.valtech-carrefourar-search-result-0-x-seeMoreButton');
+      }
+
+      filterItems.forEach((label) => {
+        texts.push(label.textContent.trim());
+      });
+    }
+    return texts;
+  });
+}
+
+async function actualizarProducto(item, unidad) {
+  const docRef = db.collection('productos').doc(item);
+  const doc = await docRef.get();
+  if (doc.exists) {
+    await docRef.update({
+      ean: [{ code: 'ejemplo', quantity: 0 }],
+      unidadMedida: unidad,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log(`Producto ${item} actualizado.`);
+  } else {
+    await docRef.set({
+      ean: [{ code: 'ejemplo', quantity: 0 }],
+      unidadMedida: unidad,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    console.log(`Producto ${item} creado.`);
+  }
+  await new Promise(resolve => setTimeout(resolve, 200)); // Añadir un retraso de 200 ms entre cada solicitud
+}
+
 async function scrapearTipoDeProducto(url) {
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
 
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 60000 });
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 120000 });
 
   try {
-    const items = await page.evaluate(() => {
-      const texts = [];
-      const filterContents = document.querySelectorAll('.valtech-carrefourar-search-result-0-x-filterContent');
-      const lastFilterContent = filterContents[filterContents.length - 1]; // Obtener el último elemento
-      if (lastFilterContent) {
-        const seeMoreButton = lastFilterContent.querySelector('.valtech-carrefourar-search-result-0-x-seeMoreButton');
-        if (seeMoreButton) {
-          seeMoreButton.click();
-        }
-        lastFilterContent.querySelectorAll('.valtech-carrefourar-search-result-0-x-filterItem label').forEach((label) => {
-          texts.push(label.textContent.trim());
-        });
-      }
-      return texts;
-    });
+    const items = await obtenerItems(page);
 
     console.log('-----------Tipos de productos en ', url, ':-----------');
     items.forEach((item) => console.log(item));
 
-    // Guardar cada item en Firestore con el nombre del producto como ID
     for (const item of items) {
-      const docRef = db.collection('productos').doc(item);
-      const doc = await docRef.get();
-      if (doc.exists) {
-        // Actualizar el timestamp del documento existente
-        await docRef.update({
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        console.log(`Producto ${item} actualizado.`);
-      } else {
-        // Crear un nuevo documento con campos inicializados
-        await docRef.set({
-          ean: [],
-          unidad: '',
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        });
-        console.log(`Producto ${item} creado.`);
-      }
+      const unidad = await determinarUnidad(item);
+      await actualizarProducto(item, unidad);
     }
   } catch (error) {
     console.error('Error al scrapear en ', url, ':', error);
@@ -72,6 +132,6 @@ const urls = [
   'https://www.carrefour.com.ar/Bebidas',
 ];
 
-urls.forEach(async (url) => {
-  await scrapearTipoDeProducto(url);
-});
+(async () => {
+  await Promise.all(urls.map(url => scrapearTipoDeProducto(url)));
+})();
