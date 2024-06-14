@@ -1,7 +1,20 @@
 import { db } from "../connection/connection.js";
 import bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
 
 const saltRounds = 10;
+
+// Definición de RestriccionesEnum
+const RestriccionesEnum = {
+  CELIACO: "celiaco",
+  EMBARAZADA: "embarazada",
+  VEGETARIANO: "vegetariano",
+  VEGANO: "vegano",
+  DIABETES: "diabetes",
+  KOSHER: "kosher",
+  HIPERTENSION: "hipertension",
+  INTOLERANTE_LACTOSA: "intolerante lactosa",
+};
 
 // Función para obtener y actualizar el contador de ID
 const obtenerYActualizarContadorID = async (tipo) => {
@@ -46,22 +59,37 @@ const validarPersona = (persona) => {
   if (!Number.isInteger(persona.edad) || persona.edad <= 0) {
     throw new Error("La edad debe ser un número entero positivo.");
   }
+  if (!Array.isArray(persona.restricciones)) {
+    throw new Error("Las restricciones deben ser un array.");
+  }
+  persona.restricciones.forEach((restriccion) => {
+    if (!Object.values(RestriccionesEnum).includes(restriccion)) {
+      throw new Error(`Restricción no válida: ${restriccion}`);
+    }
+  });
+};
+
+const generarIdPersona = (nombre, apellido) => {
+  return `${nombre.trim().toLowerCase()}_${apellido
+    .trim()
+    .toLowerCase()}_${uuidv4()}`;
 };
 
 class UserController {
   // Crear un nuevo usuario
   async crearUsuario(req, res) {
-    const { mail, password, persona } = req.body;
+    const { mail, password, nombre, apellido, edad, restricciones } = req.body;
 
     try {
       validarUsuario({ mail, password });
+      const persona = { nombre, apellido, edad, restricciones };
       validarPersona(persona);
 
       // Obtener el nuevo ID incremental para el usuario
       const userId = await obtenerYActualizarContadorID("usuarioId");
 
-      // Obtener el nuevo ID incremental para la persona
-      const personaId = await obtenerYActualizarContadorID("personaId");
+      // Generar el ID de la persona
+      const personaId = generarIdPersona(nombre, apellido);
 
       // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -82,13 +110,13 @@ class UserController {
       await userRef.set(nuevoUsuario);
 
       // Guardar persona en la colección personas
-      const personaRef = db.collection("personas").doc(String(personaId));
+      const personaRef = db.collection("personas").doc(personaId);
       await personaRef.set({ ...persona, personaId });
 
       // Crear subcolecciones vacías
-      await userRef.collection("grupoFamiliar").add({});
-      await userRef.collection("recetas").add({});
-      await userRef.collection("stock").add({});
+      await userRef.collection("grupoFamiliar").doc().set({});
+      await userRef.collection("recetas").doc().set({});
+      await userRef.collection("stock").doc().set({});
 
       console.log("Usuario creado con ID: ", userId);
       res.status(201).json({ id: userId, ...nuevoUsuario });
