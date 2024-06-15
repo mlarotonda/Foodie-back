@@ -16,6 +16,7 @@ const apiKeyGemini = process.env.API_KEY_GEMINI;
 
 //Gemini Scrapper
 const aiScrapper = process.env.AI_API_KEY;
+const secretKey = process.env.SECRET_KEY;
 
 const config = {
   apiKeyFirebase,
@@ -27,7 +28,8 @@ const config = {
   measurementId,
   serverPort,
   apiKeyGemini,
-  aiScrapper
+  aiScrapper,
+  secretKey
 };
 
-export { config };
+export default config;
