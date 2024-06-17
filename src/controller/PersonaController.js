@@ -35,7 +35,7 @@ const validarPersona = (persona) => {
 };
 
 // Crear una nueva persona
-const crearPersona = async (req, res) => {
+export const crearPersona = async (req, res) => {
   const persona = req.body;
 
   try {
@@ -55,7 +55,7 @@ const crearPersona = async (req, res) => {
 };
 
 // Obtener una persona por ID
-const obtenerPersona = async (req, res) => {
+export const obtenerPersona = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -75,7 +75,7 @@ const obtenerPersona = async (req, res) => {
 };
 
 // Obtener todas las personas
-const obtenerPersonas = async (req, res) => {
+export const obtenerPersonas = async (req, res) => {
   try {
     const querySnapshot = await db.collection("personas").get();
     const personas = [];
@@ -90,7 +90,7 @@ const obtenerPersonas = async (req, res) => {
 };
 
 // Actualizar una persona
-const actualizarPersona = async (req, res) => {
+export const actualizarPersona = async (req, res) => {
   const { id } = req.params;
   const personaActualizada = req.body;
 
@@ -107,7 +107,7 @@ const actualizarPersona = async (req, res) => {
 };
 
 // Eliminar una persona
-const eliminarPersona = async (req, res) => {
+export const eliminarPersona = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -119,12 +119,4 @@ const eliminarPersona = async (req, res) => {
     console.error("Error al eliminar el documento: ", e.message);
     res.status(500).json({ error: e.message });
   }
-};
-
-export {
-  crearPersona,
-  obtenerPersona,
-  obtenerPersonas,
-  actualizarPersona,
-  eliminarPersona,
 };

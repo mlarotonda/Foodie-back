@@ -16,7 +16,18 @@ const apiKeyGemini = process.env.API_KEY_GEMINI;
 
 //Gemini Scrapper
 const aiScrapper = process.env.AI_API_KEY;
+
+//Auth Middleware
 const secretKey = process.env.SECRET_KEY;
+
+//Buscador Imagenes
+const buscador = process.env.BUSCADOR_ID;
+
+//Google API
+const googleAPI = process.env.GOOGLE_API_KEY;
+
+//Gen AI key
+const generativeAIKey = process.env.GEN_AI_KEY;
 
 const config = {
   apiKeyFirebase,
@@ -29,6 +40,9 @@ const config = {
   serverPort,
   apiKeyGemini,
   aiScrapper,
+  buscador,
+  googleAPI,
+  generativeAIKey,
   secretKey
 };
 

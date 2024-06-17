@@ -16,7 +16,7 @@ const db = admin.firestore();
 
 // Inicializar Google Generative AI
 const genAI = new GoogleGenerativeAI(api);
-const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 async function determinarUnidad(item) {
   console.log(`Ingresando al método determinarUnidad para el producto: ${item}`);
@@ -24,8 +24,9 @@ async function determinarUnidad(item) {
   const prompt = `Dime si la unidad de medida para el producto "${item}" debe ser gramos o mililitros. Responde solo con "gramos" o "mililitros".`;
 
   let unidad = 'unidad'; // Valor predeterminado si la API no proporciona una respuesta válida
+  let attempts = 0;
 
-  while (unidad === 'unidad') {
+  while (unidad === 'unidad' && attempts < 5) {
     try {
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -36,6 +37,7 @@ async function determinarUnidad(item) {
         unidad = posibleUnidad;
       } else {
         console.log(`Respuesta inválida recibida: ${posibleUnidad}. Reintentando...`);
+        attempts++;
         await new Promise(resolve => setTimeout(resolve, 5000)); // Espera 5 segundos antes de reintentar en caso de respuesta inválida
       }
     } catch (error) {
@@ -44,14 +46,19 @@ async function determinarUnidad(item) {
         await new Promise(resolve => setTimeout(resolve, 60000)); // Espera 60 segundos antes de reintentar
       } else {
         console.error(`Error al consultar la API de Gemini para el producto "${item}":`, error);
+        attempts++;
         await new Promise(resolve => setTimeout(resolve, 5000)); // Espera 5 segundos antes de reintentar en caso de otros errores
       }
     }
   }
   
+  if (attempts >= 5) {
+    console.log(`No se pudo determinar la unidad de medida para el producto "${item}" después de 5 intentos.`);
+    return null; // Indica que no se pudo determinar la unidad
+  }
+
   return unidad;
 }
-
 
 async function obtenerItems(page) {
   return await page.evaluate(async () => {
@@ -82,12 +89,7 @@ async function actualizarProducto(item, unidad) {
   const docRef = db.collection('productos').doc(item);
   const doc = await docRef.get();
   if (doc.exists) {
-    await docRef.update({
-      ean: [{ code: 'ejemplo', quantity: 0 }],
-      unidadMedida: unidad,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    console.log(`Producto ${item} actualizado.`);
+    console.log(`Producto ${item} ya existe, no se actualiza.`);
   } else {
     await docRef.set({
       ean: [{ code: 'ejemplo', quantity: 0 }],
@@ -114,7 +116,9 @@ async function scrapearTipoDeProducto(url) {
 
     for (const item of items) {
       const unidad = await determinarUnidad(item);
-      await actualizarProducto(item, unidad);
+      if (unidad) {
+        await actualizarProducto(item, unidad);
+      }
     }
   } catch (error) {
     console.error('Error al scrapear en ', url, ':', error);
@@ -133,5 +137,16 @@ const urls = [
 ];
 
 (async () => {
+  const initialSnapshot = await db.collection('productos').get();
+  const initialProductCount = initialSnapshot.size;
+
   await Promise.all(urls.map(url => scrapearTipoDeProducto(url)));
+
+  const finalSnapshot = await db.collection('productos').get();
+  const finalProductCount = finalSnapshot.size;
+  const productsAdded = finalProductCount - initialProductCount;
+
+  console.log(`Productos iniciales: ${initialProductCount}`);
+  console.log(`Productos agregados: ${productsAdded}`);
+  console.log(`Productos totales ahora: ${finalProductCount}`);
 })();
