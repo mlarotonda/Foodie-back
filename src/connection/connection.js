@@ -3,7 +3,7 @@ import { pathToFileURL } from "url";
 
 // Convierte la ruta del archivo de credenciales a una URL válida
 const serviceAccountPath = pathToFileURL(
-  "C:/Users/pesta/OneDrive/Escritorio/foodie-fb.json"
+  "C:/Users/f16071/Desktop/foodie-fb.json"
 ).href;
 
 async function initializeFirebase() {
