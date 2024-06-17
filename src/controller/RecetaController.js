@@ -1,4 +1,4 @@
-import { db } from './config/firebaseConfig';
+import { db } from './config/firebaseConfig.js';
 import { collection, addDoc, getDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 
 // Validación de la receta
