@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { db } from "../connection/connection.js";
 
 const apikey = "AIzaSyAS84CqIgescRVP2lv-G1X8k9TwiKJ7Jwo";
 const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" + apikey;
@@ -78,6 +79,24 @@ class GeminiController2 {
       return null;
     }
   };
+
+  // Función para generar contenido con el modelo
+  async generarTipoDeProducto(nombresProductos) {
+    const productosSnapshot = await db.collection("productos").get();
+    const tiposDeProductos = productosSnapshot.docs.map(doc => doc.id).join(', ');
+
+    const prompt = `Tengo los siguientes productos: ${nombresProductos.join(', ')}. En base a sus nombres, a qué tipo de producto pertenecen? Elegir un unico tipo de producto. Las opciones son: ${tiposDeProductos}. Responde SOLO con el tipo de producto correspondiente`;
+
+    try {
+      const result = await axios.post(url, { prompt });
+      const responseText = await result.data.candidates[0].content;
+      console.log(`Tipo de producto generado: ${responseText.trim()}`);
+      return responseText.trim();
+    } catch (error) {
+      throw new Error(`Error al generar contenido con el modelo: ${error.message}`);
+    }
+  }
 }
 
 export default new GeminiController2();
+export { generarTipoDeProducto };
