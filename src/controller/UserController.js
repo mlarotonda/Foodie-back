@@ -2,7 +2,7 @@ import { db } from "../connection/connection.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
-import config  from "../config/config.js";
+import config from "../config/config.js";
 
 const saltRounds = 10;
 
@@ -36,12 +36,20 @@ const obtenerYActualizarContadorID = async (tipo) => {
   return nuevoId;
 };
 
+const validarEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!regex.test(email)) {
+    throw new Error("El correo electrónico no es válido.");
+  }
+};
+
 const validarUsuario = (usuario) => {
   if (typeof usuario.mail !== "string" || usuario.mail.trim() === "") {
     throw new Error(
       "El correo electrónico es obligatorio y debe ser una cadena no vacía."
     );
   }
+  validarEmail(usuario.mail);
   if (typeof usuario.password !== "string" || usuario.password.trim() === "") {
     throw new Error(
       "La contraseña es obligatoria y debe ser una cadena no vacía."
@@ -86,7 +94,14 @@ class UserController {
       const persona = { nombre, apellido, edad, restricciones };
       validarPersona(persona);
 
-      const userId = await obtenerYActualizarContadorID("usuarioId");
+      // Validar si el correo ya está en uso
+      const userRef = db.collection("usuarios").doc(mail);
+      const docSnap = await userRef.get();
+      if (docSnap.exists) {
+        return res
+          .status(400)
+          .json({ error: "El correo electrónico ya está en uso." });
+      }
 
       const personaId = generarIdPersona(nombre, apellido);
 
@@ -95,7 +110,6 @@ class UserController {
 
       // Inicializar datos del usuario
       const nuevoUsuario = {
-        userId,
         mail,
         password: hashedPassword,
         persona: {
@@ -104,8 +118,7 @@ class UserController {
         },
       };
 
-      // Guardar usuario en Firestore
-      const userRef = db.collection("usuarios").doc(String(userId));
+      // Guardar usuario en Firestore con mail como ID
       await userRef.set(nuevoUsuario);
 
       // Guardar persona en la colección personas
@@ -117,8 +130,8 @@ class UserController {
       await userRef.collection("recetas").doc().set({});
       await userRef.collection("stock").doc().set({});
 
-      console.log("Usuario creado con ID: ", userId);
-      res.status(201).json({ id: userId, ...nuevoUsuario });
+      console.log("Usuario creado con ID: ", mail);
+      res.status(201).json({ id: mail, ...nuevoUsuario });
     } catch (e) {
       console.error("Error al crear el usuario: ", e.message);
       res.status(400).json({ error: e.message });
@@ -130,14 +143,14 @@ class UserController {
     const { mail, password } = req.body;
 
     try {
-      const userRef = db.collection("usuarios").where("mail", "==", mail);
-      const userSnap = await userRef.get();
+      const userRef = db.collection("usuarios").doc(mail);
+      const docSnap = await userRef.get();
 
-      if (userSnap.empty) {
+      if (!docSnap.exists) {
         return res.status(404).json({ error: "Usuario no encontrado." });
       }
 
-      const user = userSnap.docs[0].data();
+      const user = docSnap.data();
       const isPasswordValid = await bcrypt.compare(password, user.password);
 
       if (!isPasswordValid) {
@@ -145,7 +158,7 @@ class UserController {
       }
 
       // Crear un token con el ID del usuario y una fecha de expiración
-      const token = jwt.sign({ id: user.userId }, config.secretKey, {
+      const token = jwt.sign({ id: user.mail }, config.secretKey, {
         expiresIn: "1h", // El token expira en 1 hora
       });
 
@@ -221,14 +234,14 @@ class UserController {
     const { mail, password } = req.body;
 
     try {
-      const userRef = db.collection("usuarios").where("mail", "==", mail);
-      const userSnap = await userRef.get();
+      const userRef = db.collection("usuarios").doc(mail);
+      const docSnap = await userRef.get();
 
-      if (userSnap.empty) {
+      if (!docSnap.exists) {
         return res.status(404).json({ error: "Usuario no encontrado." });
       }
 
-      const user = userSnap.docs[0].data();
+      const user = docSnap.data();
       const isPasswordValid = await bcrypt.compare(password, user.password);
 
       if (!isPasswordValid) {
@@ -236,7 +249,7 @@ class UserController {
       }
 
       // Crear un token con el ID del usuario y una fecha de expiración
-      const token = jwt.sign({ id: user.userId }, config.secretKey, {
+      const token = jwt.sign({ id: user.mail }, config.secretKey, {
         expiresIn: "1h", // El token expira en 1 hora
       });
 
