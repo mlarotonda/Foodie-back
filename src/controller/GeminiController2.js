@@ -8,6 +8,8 @@ class GeminiController2 {
   constructor() {}
 
   getRecipes = async (req, res) => {
+    console.log("------request")
+
     const { q } = req.query;
     
     try {
@@ -22,7 +24,8 @@ class GeminiController2 {
               { "text": "Dar 3 recetas con estos ingredientes: " + q },
               { "text": "Las recetas deben incluir ingredientes y pasos" },
               { "text": "Los ingredientes deben estar representados en gramos o mililitros" },
-              { "text": "Devolver las 3 recetas en formato JSON, donde en los ingredientes vengan los campos descripcion, cantidad y unidad y los pasos sea un array de strings" }
+              { "text": "Devolver las 3 recetas en formato JSON, donde en los ingredientes vengan los campos description, quantity (string) y unit y los pasos sea un array de strings" },
+              { "text": "Los nombres de los campos del JSON deben estar en ingles, pero los valores en español" }
             ]
           }
         ]
@@ -31,10 +34,12 @@ class GeminiController2 {
       const response = await axios.post(url, body, { headers });
 
       if (response.data) {
-        const rawText = response.data.candidates.map(candidate =>
-          candidate.content.parts.map(part => part.text).join('')
-        ).join('');
-
+        // const rawText = response.data.candidates.map(candidate =>
+        //   candidate.content.parts.map(part => part.text).join('')
+        // ).join('');
+        
+        const rawText = response.data.candidates[0].content.parts[0].text;
+        
         const cleanedText = rawText
           .replace(/```json/g, '')
           .replace(/```/g, '')
@@ -42,20 +47,26 @@ class GeminiController2 {
           .replace(/\\t/g, '')
           .trim();
 
-        const finalJson = JSON.parse(cleanedText);
+        var finalJson = null;  
+        try {
+          finalJson = JSON.parse(cleanedText);
+        } catch (error) {
+          res.status(500).send({ success: false, message: '1-Formato de respuesta de la API externa inesperado' + error});
+        }
         
         for (let recipe of finalJson) {
-          const searchTerm = recipe.nombre.replace(' ', '+');
-          recipe.imagen = await this.getFirstImageUrl(searchTerm);
+          const searchTerm = recipe.name.replace(' ', '+');
+          recipe.imageUrl = await this.getFirstImageUrl(searchTerm);
         }
 
+        console.log("--response")
         res.status(200).send(finalJson);
       } else {
-        res.status(500).send({ success: false, message: 'Formato de respuesta de la API externa inesperado' });
+        res.status(500).send({ success: false, message: '2-Formato de respuesta de la API externa inesperado' + error});
       }
 
     } catch (error) {
-      res.status(500).send({ success: false, message: 'Error al obtener datos de la API externa: ' + error });
+      res.status(500).send({ success: false, message: '3-Error al obtener datos de la API externa: ' + error });
     }
   };
 
