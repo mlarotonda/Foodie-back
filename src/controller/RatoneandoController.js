@@ -27,7 +27,7 @@ class RatoneandoController {
   };
 
   // Función para buscar producto en la API de Ratoneando
-  async buscarProductoEnAPI(ean) {
+ async buscarProductoEnAPI(ean) {
     try {
       console.log(`Buscando producto en API Ratoneando con EAN: ${ean}`);
       const response = await axios.get(`https://api.ratoneando.ar/?q=${ean}`, {
@@ -50,4 +50,3 @@ class RatoneandoController {
 }
 
 export default new RatoneandoController();
-export { buscarProductoEnAPI };

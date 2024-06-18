@@ -1,6 +1,6 @@
 import { db } from "../connection/connection.js";
-import { buscarProductoEnAPI } from './RatoneandoController.js';
-import { generarTipoDeProducto } from './GeminiController2.js';
+import RatoneandoController from './RatoneandoController.js';
+import GeminiController from './GeminiController2.js';
 
 class EanController {
   // Método para obtener el tipo de producto por EAN
@@ -26,8 +26,8 @@ class EanController {
         } else {
             console.log("EAN no encontrado, llamando a la API de Ratoneando.");
 
-            const nombresProductos = await buscarProductoEnAPI(ean);
-            tipoProducto = await generarTipoDeProducto(nombresProductos);
+            const nombresProductos = await RatoneandoController.buscarProductoEnAPI(ean);
+            tipoProducto = await GeminiController.generarTipoDeProducto(nombresProductos);
 
             if (!tipoProducto || tipoProducto.trim() === "") {
                 throw new Error("El tipo de producto no es válido.");
