@@ -110,4 +110,3 @@ class GeminiController2 {
 }
 
 export default new GeminiController2();
-export { generarTipoDeProducto };
