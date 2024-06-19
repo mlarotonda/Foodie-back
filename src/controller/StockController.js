@@ -115,10 +115,20 @@ class StockController {
         .doc(String(userId)) // Convert userId to string
         .collection("stock")
         .get();
-      const stock = stockSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const stock = await Promise.all(
+        stockSnapshot.docs.map(async (doc) => {
+          const productoData = doc.data();
+          const productoDoc = await db.collection("productos").doc(doc.id).get();
+          const imageUrl = productoDoc.data().imageUrl;
+          return {
+            id: doc.id,
+            ...productoData,
+            imageUrl,
+          };
+        })
+      );
+
+      console.log(stock);
 
       res.status(200).json(stock);
     } catch (e) {

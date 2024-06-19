@@ -2,9 +2,7 @@ import puppeteer from 'puppeteer';
 import admin from 'firebase-admin';
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: "json" };
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { config } from '../config/config.js';
 
-//const api = 'AIzaSyBlAsyyszW8nOtxZt-RDHNYX-lqnHoiX3s';
 const api = 'AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw';
 
 // Inicializar Firebase
@@ -85,18 +83,25 @@ async function obtenerItems(page) {
   });
 }
 
-async function actualizarProducto(item, unidad) {
-  const docRef = db.collection('productos').doc(item);
-  const doc = await docRef.get();
-  if (doc.exists) {
-    console.log(`Producto ${item} ya existe, no se actualiza.`);
-  } else {
-    await docRef.set({
-      ean: [{ code: 'ejemplo', quantity: 0 }],
-      unidadMedida: unidad,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    console.log(`Producto ${item} creado.`);
+async function actualizarProducto(item) {
+  try {
+    const docRef = db.collection('productos').doc(item);
+    const doc = await docRef.get();
+    if (doc.exists) {
+      console.log(`Producto ${item} ya existe, no se actualiza.`);
+      await docRef.update({
+        ean: admin.firestore.FieldValue.delete()
+      });
+    } else {
+      const unidad = await determinarUnidad(item);
+      await docRef.set({
+        unidadMedida: unidad,
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`Producto ${item} creado.`);
+    }
+  } catch (error) {
+    console.error(`Error al actualizar el producto "${item}":`, error);
   }
   await new Promise(resolve => setTimeout(resolve, 200)); // Añadir un retraso de 200 ms entre cada solicitud
 }
@@ -106,24 +111,21 @@ async function scrapearTipoDeProducto(url) {
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
 
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 120000 });
-
   try {
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 120000 });
     const items = await obtenerItems(page);
 
     console.log('-----------Tipos de productos en ', url, ':-----------');
     items.forEach((item) => console.log(item));
 
-    for (const item of items) {
-      const unidad = await determinarUnidad(item);
-      if (unidad) {
-        await actualizarProducto(item, unidad);
-      }
+    for (const item of items) {     
+      await actualizarProducto(item);    
     }
   } catch (error) {
     console.error('Error al scrapear en ', url, ':', error);
   } finally {
     await browser.close();
+    console.log(`Finalizado el procesamiento de la URL: ${url}`);
   }
 }
 
@@ -140,6 +142,12 @@ const urls = [
   const initialSnapshot = await db.collection('productos').get();
   const initialProductCount = initialSnapshot.size;
 
+  /*
+  for(const url of urls){
+    await scrapearTipoDeProducto(url);
+  }
+  */
+ 
   await Promise.all(urls.map(url => scrapearTipoDeProducto(url)));
 
   const finalSnapshot = await db.collection('productos').get();

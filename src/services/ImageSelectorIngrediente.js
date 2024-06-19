@@ -19,7 +19,7 @@ const cx = "92403c1691e7c486c";
 const genAI = new GoogleGenerativeAI("AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-const defaultImageUrl = "https://e7.pngegg.com/pngimages/577/649/png-clipart-question-mark-question-mark-thumbnail.png";
+const defaultImageUrl = "https://www.svgrepo.com/show/146075/question.svg";
 
 const fetchWithRetry = async (fetchFunction, retries = 5, backoff = 3000) => {
   for (let i = 0; i < retries; i++) {
@@ -39,7 +39,7 @@ const fetchWithRetry = async (fetchFunction, retries = 5, backoff = 3000) => {
 };
 
 const traducirIngrediente = async (nombre) => {
-  const prompt = `Traducir el siguiente ingrediente al ingles: "${nombre}". Devolver unicamente la traduccion. En el caso de no encontrar traduccion, devolver "no encontre"`;
+  const prompt = `Traducir el siguiente ingrediente al ingles: "${nombre}". Devolver unicamente la traduccion. En caso de dudar con alguna traduccion, tene en cuenta que es en un contexto de comida. En el caso de no encontrar traduccion, devolver "no encontre"`;
 
   console.log(`Traduciendo ingrediente: ${nombre}`);
 
