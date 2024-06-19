@@ -1,6 +1,6 @@
 import { db } from "../connection/connection.js";
 import RatoneandoController from './RatoneandoController.js';
-import GeminiController from './GeminiController2.js';
+import GeminiController from './GeminiController.js';
 
 class EanController {
   // Método para obtener el tipo de producto por EAN
@@ -33,12 +33,14 @@ class EanController {
                 throw new Error("El tipo de producto no es válido.");
             }
 
+            /*
             await eanRef.set({
                 tipo: tipoProducto,
                 timestamp: new Date().toISOString()
             });
 
             console.log(`Producto con EAN: ${ean} insertado en Firestore con tipo: ${tipoProducto}`);
+            */
         }
 
         res.json({ tipo: tipoProducto });
