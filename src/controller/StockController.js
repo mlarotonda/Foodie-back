@@ -48,7 +48,7 @@ class StockController {
         const currentCantidad = userStockDoc.data().cantidad;
         await userStockRef.update({
           cantidad: currentCantidad + (cantidad * unidad),
-          timestamp: new Date().toISOString()
+          ultimaCarga: new Date().toISOString()
         });
         console.log(`Stock actualizado para el producto: ${tipoProducto} del usuario: ${userId} con nueva cantidad: ${currentCantidad + (cantidad * unidad)}`);
       } else {
@@ -63,6 +63,48 @@ class StockController {
     } catch (e) {
       console.error("Error al confirmar el EAN: ", e.message);
       res.status(400).json({ error: `Error al confirmar el EAN: ${e.message}` });
+    }
+  }
+
+  async agregarProductoPorNombre(req, res) {
+    const userId = req.userId;
+    const { cantidad, nombreProducto } = req.body;
+    
+    try {
+      validarProducto({ cantidad });
+    
+      const ultimaCarga = new Date().toISOString();
+    
+      const productoRef = db
+        .collection("usuarios")
+        .doc(String(userId))
+        .collection("stock")
+        .doc(nombreProducto);
+    
+      const docSnap = await productoRef.get();
+    
+      if (docSnap.exists) {
+        await productoRef.update({
+          cantidad: productoExistente.cantidad + cantidad,
+          ultimaCarga,
+        });
+      } else {
+        const ingredienteSnapshot = await db.collection("productos").doc(nombreProducto);
+        const ingredienteRef = await ingredienteSnapshot.get();
+        const unidad = ingredienteRef.data().unidadMedida;
+
+        await productoRef.set({ cantidad, unidad, ultimaCarga });
+      }
+    
+      console.log(
+        `Tipo de producto ${nombreProducto} añadido al stock del usuario ${userId}.`
+      );
+      res
+        .status(201)
+        .json({ message: `Tipo de producto ${nombreProducto} añadido al stock.` });
+    } catch (e) {
+      console.error("Error al añadir el tipo de producto al stock: ", e.message);
+      res.status(400).json({ error: e.message });
     }
   }
 
