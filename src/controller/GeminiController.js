@@ -59,13 +59,12 @@ class GeminiController{
         const productosPrompt = productos.map(p => `${p.nombre} medido en ${p.unidadMedida}`).join(', ');
   
         let prompt = `
-          Dar 3 recetas de almuerzo/cena que se puedan realizar utilizando SOLO y UNICAMENTE los productos en el stock del usuario. 
-          Productos disponibles: ${ingredientesPrompt}.
-          El usuario no tiene acceso a otros ingredientes.
+          Dar 3 recetas de almuerzo/cena que se puedan realizar utilizando SOLO y UNICAMENTE los productos en el stock del usuario. Productos disponibles: ${ingredientesPrompt}.
+          El usuario no tiene acceso a otros ingredientes asi que las recetas deben contener unicamente lo que esta en stock.
           Adapta los ingredientes de las recetas para que coincidan con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
           Las recetas deben estar pensadas para una sola persona, y las porciones pueden ser ajustadas para coincidir con eso.
           Las porciones de los ingredientes deben estar medidas UNICAMENTE en gramos o mililitros, convertir las demás a la que sea más conveniente.
-          Devolver las 3 recetas en formato JSON, con los campos {nombre, ingredientes (description, quantity, unit), pasos (1,2,3,etc)}.
+          Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (1,2,3,etc)}.
         `;
   
         if (restrictions.length > 0) {
@@ -96,11 +95,11 @@ class GeminiController{
         }
   
         for (let recipe of finalJson) {
-          const searchTerm = recipe.nombre.replace(' ', '+');
+          const searchTerm = recipe.name.replace(' ', '+');
           recipe.imageUrl = await this.getFirstImageUrl(searchTerm);
   
           // Log the ingredients of each recipe
-          console.log(`Ingredientes de la receta ${recipe.nombre}:`, recipe.ingredientes);
+          console.log(`Ingredientes de la receta ${recipe.name}:`, recipe.ingredients);
         }
   
         console.log("--response");
