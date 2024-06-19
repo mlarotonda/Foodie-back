@@ -52,11 +52,18 @@ class StockController {
         });
         console.log(`Stock actualizado para el producto: ${tipoProducto} del usuario: ${userId} con nueva cantidad: ${currentCantidad + (cantidad * unidad)}`);
       } else {
-        await userStockRef.set({
+
+        const ingredienteSnapshot = await db.collection("productos").doc(nombreProducto);
+        const ingredienteRef = await ingredienteSnapshot.get();
+        const unidadMedida = ingredienteRef.data().unidadMedida;
+
+        await userStockRef.set({         
           cantidad: cantidad * unidad,
-          ultimaCarga: new Date().toISOString()
+          ultimaCarga: new Date().toISOString(),
+          unidadMedida
         });
-        console.log(`Nuevo stock creado para el producto: ${tipoProducto} del usuario: ${email} con cantidad: ${cantidad * unidad}`);
+
+        console.log(`Nuevo stock creado para el producto: ${tipoProducto} del usuario: ${email} con: ${cantidad * unidad}  ${unidadMedida}`);
       }
 
       res.status(200).json({ message: 'Confirmación exitosa' });
