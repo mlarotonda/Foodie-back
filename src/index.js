@@ -7,7 +7,7 @@ const app = express();
 const port = config.serverPort;
 
 // Conexión a Firebase
-console.log("Firebase app initialized:", db);
+console.log("Firebase app initialized:");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
