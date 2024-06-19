@@ -1,5 +1,4 @@
 import { db } from "../connection/connection.js";
-import EanController from "./EanController.js";
 
 const validarProducto = (producto) => {
   if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
@@ -18,91 +17,52 @@ const validarProductoParaConsumo = (producto) => {
 };
 
 class StockController {
-  async agregarProductoPorEAN(req, res) {
-    const userId = req.userId;
-    const { ean, cantidad } = req.body;
 
-    try {
-      validarProducto({ cantidad });
+  // Método para confirmar el producto por parte del usuario
+  async confirmacionUsuario(req, res) {
+    const { userId, ean, tipoProducto, cantidad, unidad } = req.body;
 
-      const ingrediente = await EanController.obtenerTipoProductoPorEAN(ean)
-
-      console.log(`Tipo de producto encontrado: ${ingrediente}`);
-
-      const timestamp = new Date().toISOString();
-
-      const productoRef = db
-        .collection("usuarios")
-        .doc(String(userId)) // Convert userId to string
-        .collection("stock")
-        .doc(ingrediente);
-
-      const docSnap = await productoRef.get();  
-
-      if (docSnap.exists) {
-        const productoExistente = docSnap.data();
-        await productoRef.update({
-          cantidad: productoExistente.cantidad + cantidad,
-          timestamp,
-        });
-      } else {
-        const ingredienteSnapshot = await db.collection("productos").doc(ingrediente)
-        const ingredienteRef = await ingredienteSnapshot.get();
-        const unidad = ingredienteRef.data().unidadMedida;
-        await productoRef.set({ cantidad, unidad, timestamp });
-      }
-
-      console.log(
-        `Tipo de producto ${ingrediente} agregado al stock del usuario ${userId}.`
-      );
-      res
-        .status(201)
-        .json({ message: `Tipo de producto ${ingrediente} agregado al stock.` });
-    } catch (e) {
-      console.error("Error al añadir el tipo de producto al stock: ", e.message);
-      res.status(400).json({ error: e.message });
+    if (!userId || !ean || !tipoProducto || !cantidad || !unidad) {
+      console.log('Datos incompletos en la solicitud');
+      return res.status(400).json({ error: 'Todos los campos son requeridos' });
     }
-  }
-
-  async agregarProductoPorNombre(req, res) {
-    const userId = req.userId;
-    const { cantidad, nombreProducto } = req.body;
 
     try {
-      validarProducto({ cantidad });
+      console.log(`Confirmando EAN: ${ean} con tipo: ${tipoProducto}, cantidad: ${cantidad}, unidad: ${unidad} para el usuario: ${userId}`);
 
-      const timestamp = new Date().toISOString();
+      const eanRef = db.collection("eans").doc(String(ean));
+      const eanDoc = await eanRef.get();
 
-      const productoRef = db
-        .collection("usuarios")
-        .doc(String(userId)) // Convert userId to string
-        .collection("stock")
-        .doc(nombreProducto);
-
-      const docSnap = await productoRef.get();
-
-      if (docSnap.exists) {
-        const productoExistente = docSnap.data();
-        await productoRef.update({
-          cantidad: productoExistente.cantidad + cantidad,
-          timestamp,
+      if (!eanDoc.exists) {
+        await eanRef.set({
+          tipo: tipoProducto,
+          timestamp: new Date().toISOString()
         });
-      } else {
-        const ingredienteSnapshot = await db.collection("productos").doc(nombreProducto)
-        const ingredienteRef = await ingredienteSnapshot.get();
-        const unidad = ingredienteRef.data().unidadMedida;
-        await productoRef.set({ cantidad, unidad, timestamp });
+        console.log(`Producto con EAN: ${ean} insertado en Firestore con tipo: ${tipoProducto}`);
       }
 
-      console.log(
-        `Tipo de producto ${nombreProducto} añadido al stock del usuario ${userId}.`
-      );
-      res
-        .status(201)
-        .json({ message: `Tipo de producto ${nombreProducto} añadido al stock.` });
+      const userStockRef = db.collection("usuarios").doc(String(userId)).collection("stock").doc(tipoProducto);
+      const userStockDoc = await userStockRef.get();
+
+      if (userStockDoc.exists) {
+        const currentCantidad = userStockDoc.data().cantidad;
+        await userStockRef.update({
+          cantidad: currentCantidad + (cantidad * unidad),
+          timestamp: new Date().toISOString()
+        });
+        console.log(`Stock actualizado para el producto: ${tipoProducto} del usuario: ${userId} con nueva cantidad: ${currentCantidad + (cantidad * unidad)}`);
+      } else {
+        await userStockRef.set({
+          cantidad: cantidad * unidad,
+          ultimaCarga: new Date().toISOString()
+        });
+        console.log(`Nuevo stock creado para el producto: ${tipoProducto} del usuario: ${email} con cantidad: ${cantidad * unidad}`);
+      }
+
+      res.status(200).json({ message: 'Confirmación exitosa' });
     } catch (e) {
-      console.error("Error al añadir el tipo de producto al stock: ", e.message);
-      res.status(400).json({ error: e.message });
+      console.error("Error al confirmar el EAN: ", e.message);
+      res.status(400).json({ error: `Error al confirmar el EAN: ${e.message}` });
     }
   }
 
@@ -139,7 +99,7 @@ class StockController {
 
   async obtenerProducto(req, res) {
     const userId = req.userId;
-    const { nombreProducto } = req.params;
+    const { nombreProducto } = req.body;
 
     try {
       const productoRef = db
@@ -162,15 +122,14 @@ class StockController {
 
   async actualizarProducto(req, res) {
     const userId = req.userId;
-    const { nombreProducto } = req.params;
-    const { unidad, cantidad } = req.body;
+    const { nombreProducto, unidad, cantidad } = req.body;
 
     try {
       validarProducto({ unidad, cantidad });
 
       const productoRef = db
         .collection("usuarios")
-        .doc(String(userId)) // Convert userId to string
+        .doc(String(userId))
         .collection("stock")
         .doc(nombreProducto);
       await productoRef.update({
@@ -193,7 +152,7 @@ class StockController {
 
   async eliminarProducto(req, res) {
     const userId = req.userId;
-    const { nombreProducto } = req.params;
+    const { nombreProducto } = req.body;
 
     try {
       const productoRef = db
@@ -218,14 +177,14 @@ class StockController {
   async consumirProductos(req, res) {
     const userId = req.userId;
     const { ingredientes } = req.body;
-
+  
     try {
       for (const ingrediente of ingredientes) {
-        const { nombreProducto, cantidad } = ingrediente;
-
+        const { description: nombreProducto, quantity: cantidad } = ingrediente;
+  
         // Validar la cantidad
         validarProductoParaConsumo({ cantidad });
-
+  
         // Verificar que el nombre del producto coincida con un documento en la colección productos
         const productoDoc = await db.collection("productos").doc(nombreProducto).get();
         if (!productoDoc.exists) {
@@ -233,24 +192,24 @@ class StockController {
             error: `Producto ${nombreProducto} no encontrado en la colección de productos.`,
           });
         }
-
+  
         // Buscar el producto en el stock del usuario
         const productoRef = db
           .collection("usuarios")
           .doc(String(userId))
           .collection("stock")
           .doc(nombreProducto);
-
+  
         const docSnap = await productoRef.get();
-
+  
         if (!docSnap.exists) {
           return res.status(404).json({
             error: `Producto ${nombreProducto} no encontrado en el stock del usuario.`,
           });
         }
-
+  
         const productoExistente = docSnap.data();
-
+  
         // Verificar si la cantidad solicitada es menor o igual a la cantidad en stock
         if (cantidad > productoExistente.cantidad) {
           return res.status(400).json({
@@ -258,22 +217,22 @@ class StockController {
           });
         }
       }
-
+  
       // Si todas las validaciones pasan, realizar la resta de los productos
       for (const ingrediente of ingredientes) {
-        const { nombreProducto, cantidad } = ingrediente;
-
+        const { description: nombreProducto, quantity: cantidad } = ingrediente;
+  
         const productoRef = db
           .collection("usuarios")
           .doc(String(userId))
           .collection("stock")
           .doc(nombreProducto);
-
+  
         const docSnap = await productoRef.get();
         const productoExistente = docSnap.data();
         const nuevaCantidad = productoExistente.cantidad - cantidad;
-
-        if (nuevaCantidad === 0 || nuevaCantidad < 0) {
+  
+        if (nuevaCantidad <= 0) {
           await productoRef.delete();
           console.log(
             `Producto ${nombreProducto} eliminado del stock del usuario ${userId}.`
@@ -281,14 +240,14 @@ class StockController {
         } else {
           await productoRef.update({
             cantidad: nuevaCantidad,
-            timestamp: new Date().toISOString(),
+            ultimoConsumo: new Date().toISOString(),
           });
           console.log(
             `Producto ${nombreProducto} actualizado en el stock del usuario ${userId}.`
           );
         }
       }
-
+  
       console.log(`Productos consumidos del stock del usuario ${userId}.`);
       res.status(200).json({
         message: `Productos consumidos del stock del usuario ${userId}.`,
@@ -297,7 +256,7 @@ class StockController {
       console.error("Error al consumir productos del stock: ", e.message);
       res.status(400).json({ error: e.message });
     }
-  }
+  }  
 }
 
 export default new StockController();

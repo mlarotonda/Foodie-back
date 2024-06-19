@@ -141,12 +141,6 @@ const urls = [
 (async () => {
   const initialSnapshot = await db.collection('productos').get();
   const initialProductCount = initialSnapshot.size;
-
-  /*
-  for(const url of urls){
-    await scrapearTipoDeProducto(url);
-  }
-  */
  
   await Promise.all(urls.map(url => scrapearTipoDeProducto(url)));
 

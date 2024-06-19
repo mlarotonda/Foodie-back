@@ -4,8 +4,7 @@ import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.post("/ean", authMiddleware, StockController.agregarProductoPorEAN);
-router.post("/anadir", authMiddleware, StockController.agregarProductoPorNombre);
+router.post("/confirmation", authMiddleware, StockController.confirmacionUsuario)
 router.get("/", authMiddleware, StockController.obtenerStock);
 router.get("/:nombreProducto", authMiddleware, StockController.obtenerProducto);
 router.put(
