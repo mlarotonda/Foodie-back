@@ -41,7 +41,14 @@ const validarPassword = (password) => {
 
 class UserController {
   async crearUsuario(req, res) {
-    const { mail, password, nombre, apellido, edad, restricciones } = req.body;
+    const {
+      mail,
+      password,
+      nombre,
+      apellido,
+      edad,
+      restricciones = [],
+    } = req.body;
 
     try {
       validarUsuario({ mail, password });
@@ -114,10 +121,10 @@ class UserController {
 
   // Obtener un usuario por ID
   async obtenerUsuario(req, res) {
-    const { id } = req.params;
-
+    const userId = req.user.id;
+    console.log(userId);
     try {
-      const userRef = db.collection("usuarios").doc(id);
+      const userRef = db.collection("usuarios").doc(userId);
       const docSnap = await userRef.get();
 
       if (docSnap.exists) {
