@@ -13,7 +13,7 @@ class GeminiController{
       const tiposDeProductos = productosSnapshot.docs.map(doc => doc.id).join(', ');
 
       const prompt = `Tengo los siguientes productos: ${nombresProductos.join(', ')}. En base a sus nombres, a qué tipo de producto pertenecen? Elegir un único tipo de producto. Las opciones son: ${tiposDeProductos}. Responde SOLO con el tipo de producto correspondiente`;
-
+      
       try {
         const result = await model.generateContent(prompt);
         const responseText = await result.response;
@@ -29,7 +29,7 @@ class GeminiController{
     getRecipes = async (req, res) => {
       console.log("------request");
   
-      const { userId } = req.query;
+      const userId = req.userId;
   
       try {
         const userDoc = await db.collection('usuarios').doc(userId).get();
@@ -59,8 +59,9 @@ class GeminiController{
         const productosPrompt = productos.map(p => `${p.nombre} medido en ${p.unidadMedida}`).join(', ');
   
         let prompt = `
-          Dar 3 recetas de almuerzo/cena que se puedan realizar utilizando SOLO y UNICAMENTE los productos en el stock del usuario. Productos disponibles: ${ingredientesPrompt}.
+          Dar 3 recetas de almuerzo/cena que se puedan realizar utilizando SOLO y UNICAMENTE los ingredientes en el stock del usuario. Ingredientes en stock: ${ingredientesPrompt}.
           El usuario no tiene acceso a otros ingredientes asi que las recetas deben contener unicamente lo que esta en stock.
+          No asumas que el usuario tiene mas ingredientes de los que estan en su stock.
           Adapta los ingredientes de las recetas para que coincidan con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
           Las recetas deben estar pensadas para una sola persona, y las porciones pueden ser ajustadas para coincidir con eso.
           Las porciones de los ingredientes deben estar medidas UNICAMENTE en gramos o mililitros, convertir las demás a la que sea más conveniente.

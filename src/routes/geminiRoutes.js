@@ -1,8 +1,9 @@
 import { Router } from "express";
 import GeminiController from "../controller/GeminiController.js";
+import authMiddleware from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/", GeminiController.getRecipes);
+router.get("/", authMiddleware, GeminiController.getRecipes);
 
 export default router;

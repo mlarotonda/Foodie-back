@@ -20,7 +20,9 @@ class StockController {
 
   // Método para confirmar el producto por parte del usuario
   async confirmacionUsuario(req, res) {
-    const { userId, ean, tipoProducto, cantidad, unidad } = req.body;
+
+    const userId = req.userId;
+    const { ean, tipoProducto, cantidad, unidad } = req.body;
 
     if (!userId || !ean || !tipoProducto || !cantidad || !unidad) {
       console.log('Datos incompletos en la solicitud');
