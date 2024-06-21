@@ -69,10 +69,10 @@ const validarPersona = (persona) => {
   if (!Number.isInteger(persona.edad) || persona.edad <= 0) {
     throw new Error("La edad debe ser un número entero positivo.");
   }
-  if (!Array.isArray(persona.restricciones)) {
+  if (persona.restricciones && !Array.isArray(persona.restricciones)) {
     throw new Error("Las restricciones deben ser un array.");
   }
-  persona.restricciones.forEach((restriccion) => {
+  persona.restricciones?.forEach((restriccion) => {
     if (!Object.values(RestriccionesEnum).includes(restriccion)) {
       throw new Error(`Restricción no válida: ${restriccion}`);
     }
@@ -87,7 +87,14 @@ const generarIdPersona = (nombre, apellido) => {
 
 class UserController {
   async crearUsuario(req, res) {
-    const { mail, password, nombre, apellido, edad, restricciones } = req.body;
+    const {
+      mail,
+      password,
+      nombre,
+      apellido,
+      edad,
+      restricciones = [],
+    } = req.body;
 
     try {
       validarUsuario({ mail, password });
@@ -171,10 +178,10 @@ class UserController {
 
   // Obtener un usuario por ID
   async obtenerUsuario(req, res) {
-    const { id } = req.params;
-
+    const userId = req.user.id;
+    console.log(userId);
     try {
-      const userRef = db.collection("usuarios").doc(id);
+      const userRef = db.collection("usuarios").doc(userId);
       const docSnap = await userRef.get();
 
       if (docSnap.exists) {
