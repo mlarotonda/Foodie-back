@@ -10,7 +10,7 @@ class ComensalController {
 
     try {
       // Crear persona utilizando el método crearPersona
-      const personaReq = { body: { nombre, apellido, edad, restricciones } };
+      const personaReq = { nombre, apellido, edad, restricciones };
       const personaResult = await PersonaController.crearPersona(personaReq);
       if (personaResult.status !== 201) {
         return res.status(personaResult.status).json({ error: personaResult.error });
@@ -26,6 +26,9 @@ class ComensalController {
         .doc(persona.id);
 
       await comensalesRef.set({ ...persona, creacion: new Date().toISOString() });
+
+      const docRef = db.collection("personas").doc(persona.personaId);
+      await docRef.set(persona);
 
       console.log(`Persona ${persona.id} agregada al grupo de comensales del usuario ${userId}.`);
       res.status(201).json({ message: "Persona agregada al grupo de comensales.", persona });

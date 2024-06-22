@@ -1,19 +1,13 @@
 // routes/personaRoutes.js
 import express from "express";
-import {
-  crearPersona,
-  obtenerPersona,
-  obtenerPersonas,
-  actualizarPersona,
-  eliminarPersona,
-} from "../controller/PersonaController.js";
+import PersonaController from "../controller/PersonaController.js";
 
 const router = express.Router();
 
-router.post("/", crearPersona);
-router.get("/:id", obtenerPersona);
-router.get("/", obtenerPersonas);
-router.put("/:id", actualizarPersona);
-router.delete("/:id", eliminarPersona);
+router.post("/", PersonaController.crearPersona);
+router.get("/:id", PersonaController.obtenerPersona);
+router.get("/", PersonaController.obtenerPersonas);
+router.put("/:id", PersonaController.actualizarPersona);
+router.delete("/:id", PersonaController.eliminarPersona);
 
 export default router;

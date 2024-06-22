@@ -6,9 +6,9 @@ import PersonaController from "./PersonaController.js";
 
 const saltRounds = 10;
 
-const validarUsuario = (usuario) => {  
-  validarEmail(usuario.mail);
-  validarPassword(usuario.password);
+const validarUsuario = async (usuario) => {  
+  await validarEmail(usuario.mail);
+  await validarPassword(usuario.password);
 };
 
 const validarEmail = async (email) => {
@@ -16,17 +16,17 @@ const validarEmail = async (email) => {
   if (!regex.test(email)) {
     throw new Error("El correo electrónico no es válido.");
   }
-  if (typeof usuario.mail !== "string" || usuario.mail.trim() === "") {
+  if (typeof email !== "string" || email.trim() === "") {
     throw new Error(
       "El correo electrónico es obligatorio y debe ser una cadena no vacía."
     );
   }
   // Validar si el correo ya está en uso
-  const userRef = db.collection("usuarios").doc(mail);
+  const userRef = db.collection("usuarios").doc(email);
   const docSnap = await userRef.get();
   if (docSnap.exists) {
     throw new Error(
-      "El correo electrónico es obligatorio y debe ser una cadena no vacía."
+      "El correo electrónico ya está en uso."
     );
   };
 }
@@ -51,9 +51,11 @@ class UserController {
     } = req.body;
 
     try {
-      validarUsuario({ mail, password });
+      await validarUsuario({ mail, password });
       const personaUser = { nombre, apellido, edad, restricciones };
       
+      console.log(personaUser);
+
       const persona = await PersonaController.crearPersona(personaUser);
 
       // Hashear la contraseña
@@ -66,19 +68,15 @@ class UserController {
         persona
       };
 
-      const personaId = persona.personaId;
+      console.log(nuevoUsuario);
+
+      const userRef = db.collection("usuarios").doc(mail);
 
       // Guardar usuario en Firestore con mail como ID
       await userRef.set(nuevoUsuario);
 
-      // Guardar persona en la colección personas
-      const personaRef = db.collection("personas").doc(personaId);
-      await personaRef.set({ ...persona, personaId });
-
-      // Crear subcolecciones vacías
-      await userRef.collection("comensales").doc().set({});
-      await userRef.collection("recetas").doc().set({});
-      await userRef.collection("stock").doc().set({});
+      const docRef = db.collection("personas").doc(persona.personaId);
+      await docRef.set(persona);
 
       console.log("Usuario creado con ID: ", mail);
       res.status(201).json({ id: mail, ...nuevoUsuario });
@@ -249,23 +247,23 @@ class UserController {
     try {
       const userRef = db.collection("usuarios").doc(userId);
 
-      // Eliminar documentos de la subcolección comensales
-      let snapshot = await userRef.collection("comensales").get();
-      snapshot.forEach(async (doc) => {
-        await doc.ref.delete();
-      });
-
-      // Eliminar documentos de la subcolección recetas
-      snapshot = await userRef.collection("recetas").get();
-      snapshot.forEach(async (doc) => {
-        await doc.ref.delete();
-      });
-
-      // Eliminar documentos de la subcolección stock
-      snapshot = await userRef.collection("stock").get();
-      snapshot.forEach(async (doc) => {
-        await doc.ref.delete();
-      });
+       // Eliminar documentos de la subcolección comensales
+       let snapshot = await userRef.collection("comensales").get();
+       for (const doc of snapshot.docs) {
+         await doc.ref.delete();
+       }
+ 
+       // Eliminar documentos de la subcolección recetas
+       snapshot = await userRef.collection("recetas").get();
+       for (const doc of snapshot.docs) {
+         await doc.ref.delete();
+       }
+ 
+       // Eliminar documentos de la subcolección stock
+       snapshot = await userRef.collection("stock").get();
+       for (const doc of snapshot.docs) {
+         await doc.ref.delete();
+       }
 
       // Eliminar el documento del usuario
       await userRef.delete();

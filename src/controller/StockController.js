@@ -20,7 +20,7 @@ class StockController {
   // Método para confirmar el producto por parte del usuario
   async confirmacionUsuario(req, res) {
 
-    const userId = req.userId;
+    const userId = req.user.id;
     const { ean, tipoProducto, cantidad, unidad } = req.body;
 
     if (!userId || !ean || !tipoProducto || !cantidad || !unidad) {
@@ -65,9 +65,7 @@ class StockController {
           }`
         );
       } else {
-        const ingredienteSnapshot = await db
-          .collection("productos")
-          .doc(nombreProducto);
+        const ingredienteSnapshot = await db.collection("productos").doc(tipoProducto);
         const ingredienteRef = await ingredienteSnapshot.get();
         const unidadMedida = ingredienteRef.data().unidadMedida;
 
@@ -78,7 +76,7 @@ class StockController {
         });
 
         console.log(
-          `Nuevo stock creado para el producto: ${tipoProducto} del usuario: ${email} con: ${
+          `Nuevo stock creado para el producto: ${tipoProducto} del usuario: ${userId} con: ${
             cantidad * unidad
           }  ${unidadMedida}`
         );

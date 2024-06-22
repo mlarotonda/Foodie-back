@@ -43,7 +43,7 @@ const config = {
   buscador,
   googleAPI,
   generativeAIKey,
-  secretKey
+  secretKey,
 };
 
 export default config;

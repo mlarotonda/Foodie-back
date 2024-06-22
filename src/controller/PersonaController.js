@@ -3,14 +3,14 @@ import { v4 as uuidv4 } from "uuid";
 
 // Enum para las restricciones dietéticas
 const RestriccionesEnum = {
-  CELIACO: "celiaco",
-  EMBARAZADA: "embarazada",
-  VEGETARIANO: "vegetariano",
-  VEGANO: "vegano",
-  DIABETES: "diabetes",
-  KOSHER: "kosher",
-  HIPERTENSION: "hipertension",
-  INTOLERANTE_LACTOSA: "intolerante lactosa",
+  CELIACO: "Celiaquía",
+  EMBARAZADA: "Embarazo",
+  VEGETARIANO: "Vegetarianismo",
+  VEGANO: "Veganismo",
+  DIABETES: "Diabetes",
+  KOSHER: "Kosher",
+  HIPERTENSION: "Hipertensión",
+  INTOLERANTE_LACTOSA: "Intolerancia a la lactosa",
 };
 
 // Función para validar los datos de una persona
@@ -42,8 +42,8 @@ const generarIdPersona = (nombre, apellido) => {
 // Clase controladora para las operaciones CRUD de persona
 class PersonaController {
   // Crear una nueva persona
-  crearPersona = async (req) => {
-    const persona = req.body;
+  crearPersona = async (personaUser) => {
+    const persona = personaUser;
 
     try {
       validarPersona(persona);
@@ -51,11 +51,10 @@ class PersonaController {
       // Genera un nuevo ID único para la persona
       persona.personaId = generarIdPersona(persona.nombre, persona.apellido);
 
-      const docRef = db.collection("personas").doc(persona.personaId);
-      await docRef.set(persona);
+
 
       console.log("Documento escrito con ID: ", persona.personaId);
-      return { status: 201, data: { id: persona.personaId, ...persona } };
+      return { id: persona.personaId, ...persona  };
     } catch (e) {
       console.error("Error al agregar el documento: ", e.message);
       return { status: 400, error: e.message };

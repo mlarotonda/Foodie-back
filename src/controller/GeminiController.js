@@ -26,15 +26,15 @@ class GeminiController{
       }
     }
 
-    getRecipes = async (req, res) => {
+    getRecipes = async (req) => {
       console.log("------request");
   
-      const userId = req.userId;
+      const userId = req.user.id;
   
       try {
         const userDoc = await db.collection('usuarios').doc(userId).get();
         if (!userDoc.exists) {
-          return res.status(404).send({ success: false, message: 'Usuario no encontrado' });
+          throw new Error('Usuario no encontrado');
         }
   
         const userData = userDoc.data();

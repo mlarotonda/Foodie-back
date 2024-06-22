@@ -1,5 +1,6 @@
-import { db } from './config/firebaseConfig.js';
+import { db } from "../connection/connection.js";
 import { collection, addDoc, getDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import GeminiController from './GeminiController.js';
 
 // Validación de la receta
 const validarReceta = (receta) => {
@@ -25,76 +26,89 @@ const validarReceta = (receta) => {
   });
 };
 
-// Crear una nueva receta
-const crearReceta = async (receta) => {
-  try {
-    // Obtener todas las recetas
-    const recetasSnapshot = await getDocs(collection(db, "recetas"));
-    const recetas = recetasSnapshot.docs.map(doc => (doc.data()));
+class RecetaController{
 
-    // Generar nuevo recetaId
-    let newId = recetas.length + 1;
-    
-    // Validar que el nuevo recetaId no esté en uso
-    while (recetas.some(r => r.recetaId === newId)) {
-      newId++;
+  generarRecetas = async (req, res) => {
+    try {
+      const recetas = await GeminiController.getRecipes(req);
+      return res.status(200).json(recetas);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
     }
-    
-    receta.recetaId = newId;
+  };
 
-    validarReceta(receta);
-    
-    const docRef = await addDoc(collection(db, "recetas"), receta);
-    console.log("Documento escrito con ID: ", docRef.id);
-  } catch (e) {
-    console.error("Error al agregar el documento: ", e.message);
-  }
-};
 
-// Obtener una receta por ID
-const obtenerReceta = async (id) => {
-  const docRef = doc(db, "recetas", id);
-  const docSnap = await getDoc(docRef);
+  // Crear una nueva receta
+  crearReceta = async (receta) => {
+    try {
+      // Obtener todas las recetas
+      const recetasSnapshot = await getDocs(collection(db, "recetas"));
+      const recetas = recetasSnapshot.docs.map(doc => (doc.data()));
 
-  if (docSnap.exists()) {
-    return docSnap.data();
-  } else {
-    console.log("No se encontró el documento!");
-    return null;
-  }
-};
+      // Generar nuevo recetaId
+      let newId = recetas.length + 1;
+      
+      // Validar que el nuevo recetaId no esté en uso
+      while (recetas.some(r => r.recetaId === newId)) {
+        newId++;
+      }
+      
+      receta.recetaId = newId;
 
-// Obtener todas las recetas
-const obtenerRecetas = async () => {
-  const querySnapshot = await getDocs(collection(db, "recetas"));
-  const recetas = [];
-  querySnapshot.forEach((doc) => {
-    recetas.push({ id: doc.id, ...doc.data() });
-  });
-  return recetas;
-};
+      validarReceta(receta);
+      
+      const docRef = await addDoc(collection(db, "recetas"), receta);
+      console.log("Documento escrito con ID: ", docRef.id);
+    } catch (e) {
+      console.error("Error al agregar el documento: ", e.message);
+    }
+  };
 
-// Actualizar una receta
-const actualizarReceta = async (id, recetaActualizada) => {
-  try {
-    validarReceta(recetaActualizada);
+  // Obtener una receta por ID
+  obtenerReceta = async (id) => {
     const docRef = doc(db, "recetas", id);
-    await updateDoc(docRef, recetaActualizada);
-    console.log("Documento actualizado con éxito");
-  } catch (e) {
-    console.error("Error al actualizar el documento: ", e.message);
-  }
-};
+    const docSnap = await getDoc(docRef);
 
-// Eliminar una receta
-const eliminarReceta = async (id) => {
-  const docRef = doc(db, "recetas", id);
-  try {
-    await deleteDoc(docRef);
-    console.log("Documento eliminado con éxito");
-  } catch (e) {
-    console.error("Error al eliminar el documento: ", e);
-  }
-};
+    if (docSnap.exists()) {
+      return docSnap.data();
+    } else {
+      console.log("No se encontró el documento!");
+      return null;
+    }
+  };
+
+  // Obtener todas las recetas
+  obtenerRecetas = async () => {
+    const querySnapshot = await getDocs(collection(db, "recetas"));
+    const recetas = [];
+    querySnapshot.forEach((doc) => {
+      recetas.push({ id: doc.id, ...doc.data() });
+    });
+    return recetas;
+  };
+
+  // Actualizar una receta
+  actualizarReceta = async (id, recetaActualizada) => {
+    try {
+      validarReceta(recetaActualizada);
+      const docRef = doc(db, "recetas", id);
+      await updateDoc(docRef, recetaActualizada);
+      console.log("Documento actualizado con éxito");
+    } catch (e) {
+      console.error("Error al actualizar el documento: ", e.message);
+    }
+  };
+
+  // Eliminar una receta
+  eliminarReceta = async (id) => {
+    const docRef = doc(db, "recetas", id);
+    try {
+      await deleteDoc(docRef);
+      console.log("Documento eliminado con éxito");
+    } catch (e) {
+      console.error("Error al eliminar el documento: ", e);
+    }
+  };
+}
 
 export default new RecetaController();
