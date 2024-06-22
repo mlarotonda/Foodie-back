@@ -1,6 +1,8 @@
 import puppeteer from 'puppeteer';
 import admin from 'firebase-admin';
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: "json" };
+import { GoogleGenerativeAI } from "@google/generative-ai";
+//import config from "../config/config.js";
 import createModel from "../connection/geminiConnection.js";
 
 // Inicializar Firebase
@@ -10,12 +12,14 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-const model = await createModel();
+//const model = await createModel();
+const genAI = new GoogleGenerativeAI("AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw");
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 async function determinarUnidad(item) {
   console.log(`Ingresando al método determinarUnidad para el producto: ${item}`);
 
-  const prompt = `Dime si la unidad de medida para el producto "${item}" debe ser gramos o mililitros. Responde solo con "gramos" o "mililitros".`;
+  const prompt = `Dime si la unidad de medida para el producto "${item}" debe ser "gramos", "unidades" o "mililitros". Responde solo con "gramos" o "mililitros".`;
 
   let unidad = 'unidad'; // Valor predeterminado si la API no proporciona una respuesta válida
   let attempts = 0;
@@ -27,7 +31,7 @@ async function determinarUnidad(item) {
       const text = await response.text();
       const posibleUnidad = text.trim().toLowerCase();
 
-      if (posibleUnidad === 'gramos' || posibleUnidad === 'mililitros') {
+      if (posibleUnidad === 'gramos' || posibleUnidad === 'mililitros' || posibleUnidad === 'unidades') {
         unidad = posibleUnidad;
       } else {
         console.log(`Respuesta inválida recibida: ${posibleUnidad}. Reintentando...`);
@@ -82,19 +86,16 @@ async function obtenerItems(page) {
 async function actualizarProducto(item) {
   try {
     const docRef = db.collection('productos').doc(item);
-    const doc = await docRef.get();
+    const doc = await docRef.get();    
     if (doc.exists) {
-      console.log(`Producto ${item} ya existe, no se actualiza.`);
-      await docRef.update({
-        ean: admin.firestore.FieldValue.delete()
-      });
+      console.log(`Producto ya existe, no se actualiza: ${item}`);
     } else {
       const unidad = await determinarUnidad(item);
       await docRef.set({
         unidadMedida: unidad,
         timestamp: admin.firestore.FieldValue.serverTimestamp(),
       });
-      console.log(`Producto ${item} creado.`);
+      console.log(`-----Producto ${item} creado-----.`);
     }
   } catch (error) {
     console.error(`Error al actualizar el producto "${item}":`, error);
@@ -125,6 +126,21 @@ async function scrapearTipoDeProducto(url) {
   }
 }
 
+async function obtenerProductosPorUnidadMedida() {
+  try {
+    console.log('entre');
+    const snapshot = await db.collection('productos').where('unidadMedida', '==', 'unidades').get();
+    const productos = [];
+    snapshot.forEach(doc => {
+      productos.push({ id: doc.id, data: doc.data() });
+    });
+    return productos;
+  } catch (error) {
+    console.error('Error al obtener productos por unidad de medida:', error);
+    return [];
+  }
+}
+
 const urls = [
   'https://www.carrefour.com.ar/almacen',
   'https://www.carrefour.com.ar/Desayuno-y-merienda',
@@ -135,6 +151,7 @@ const urls = [
 ];
 
 (async () => {
+  
   const initialSnapshot = await db.collection('productos').get();
   const initialProductCount = initialSnapshot.size;
  
@@ -143,6 +160,9 @@ const urls = [
   const finalSnapshot = await db.collection('productos').get();
   const finalProductCount = finalSnapshot.size;
   const productsAdded = finalProductCount - initialProductCount;
+
+  const productos = await obtenerProductosPorUnidadMedida();
+  console.log(productos);
 
   console.log(`Productos iniciales: ${initialProductCount}`);
   console.log(`Productos agregados: ${productsAdded}`);

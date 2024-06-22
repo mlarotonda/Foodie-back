@@ -3,7 +3,8 @@ import config from "../config/config.js";
 
 export function createModel() {
     const genAI = new GoogleGenerativeAI(config.generativeAIKey);
-    return genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    return model
 }
 
 export default createModel;

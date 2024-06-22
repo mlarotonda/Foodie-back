@@ -4,6 +4,6 @@ import authMiddleware from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/", authMiddleware, GeminiController.getRecipes);
+router.get("/", authMiddleware, GeminiController.getUserRecipes);
 
 export default router;

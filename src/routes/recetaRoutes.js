@@ -4,6 +4,7 @@ import authMiddleware from "../middleware/auth.js";
 
 const router = Router();
 
-router.get("/", authMiddleware, RecetaController.generarRecetas);
+router.get("/user", authMiddleware, RecetaController.generarRecetas);
+router.get("/random", authMiddleware, RecetaController.generarRecetasRandom);
 
 export default router;
