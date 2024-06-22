@@ -2,8 +2,6 @@ import puppeteer from 'puppeteer';
 import admin from 'firebase-admin';
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: "json" };
 import { GoogleGenerativeAI } from "@google/generative-ai";
-//import config from "../config/config.js";
-import createModel from "../connection/geminiConnection.js";
 
 // Inicializar Firebase
 admin.initializeApp({
