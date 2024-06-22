@@ -26,7 +26,7 @@ class GeminiController{
       }
     }
 
-    getRecipes = async (req) => {
+    getUserRecipes = async (req, res) => {
       console.log("------request");
   
       const model = await createModel();
@@ -64,9 +64,86 @@ class GeminiController{
           Dar 3 recetas de almuerzo/cena que se puedan realizar utilizando SOLO y UNICAMENTE los ingredientes en el stock del usuario. Ingredientes en stock: ${ingredientesPrompt}.
           El usuario no tiene acceso a otros ingredientes asi que las recetas deben contener unicamente lo que esta en stock.
           No asumas que el usuario tiene mas ingredientes de los que estan en su stock.
-          Adapta los ingredientes de las recetas para que coincidan con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
+          Adapta los ingredientes de las recetas para que coincidan pura y exclusivamente con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
           Las recetas deben estar pensadas para una sola persona, y las porciones pueden ser ajustadas para coincidir con eso.
-          Las porciones de los ingredientes deben estar medidas UNICAMENTE en gramos o mililitros, convertir las demás a la que sea más conveniente.
+          Las porciones de los ingredientes deben estar medidas UNICAMENTE en "gramos", "mililitros" o "unidades", convertir las demás a la que sea más conveniente. NO USAR ABREVIACIONES
+          Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (1,2,3,etc)}.
+        `;
+  
+        if (restrictions.length > 0) {
+          prompt += ` Tener en cuenta las restricciones de la persona: ${restriccionesPrompt}.`;
+        }
+  
+        const result = await model.generateContent(prompt);
+        const responseText = await result.response;
+        const rawText = await responseText.text();
+  
+        console.log("Raw text received from API:", rawText);
+  
+        const cleanedText = rawText
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .replace(/\\n/g, '')
+          .replace(/\\t/g, '')
+          .trim();
+  
+        console.log("Cleaned text:", cleanedText);
+  
+        let finalJson;
+        try {
+          finalJson = JSON.parse(cleanedText);
+        } catch (error) {
+          console.error('Error parsing JSON:', error);
+          return res.status(500).send({ success: false, message: 'Formato de respuesta de la API externa inesperado: ' + error.message });
+        }
+  
+        for (let recipe of finalJson) {
+          const searchTerm = recipe.name.replace(' ', '+');
+          recipe.imageUrl = await this.getFirstImageUrl(searchTerm);
+  
+          // Log the ingredients of each recipe
+          console.log(`Ingredientes de la receta ${recipe.name}:`, recipe.ingredients);
+        }
+  
+        console.log("--response");
+        console.log("Final JSON:", finalJson);
+        return res.status(200).send(finalJson);
+      } catch (error) {
+        console.error('Error fetching data from external API:', error);
+        return res.status(500).send({ success: false, message: 'Error al obtener datos de la API externa: ' + error.message });
+      }
+    };
+
+    getRandomRecipes = async (req, res) => {
+      console.log("------request");
+  
+      const model = await createModel();
+
+      const userId = req.user.id;
+  
+      try {
+        const userDoc = await db.collection('usuarios').doc(userId).get();
+        if (!userDoc.exists) {
+          throw new Error('Usuario no encontrado');
+        }
+  
+        const userData = userDoc.data();
+        console.log("Datos del usuario:", userData);
+  
+        const restrictions = userData.restricciones || [];
+        console.log("Restricciones del usuario:", restrictions);
+  
+        const productosSnapshot = await db.collection('productos').get();
+        const productos = productosSnapshot.docs.map(doc => ({ nombre: doc.id, unidadMedida: doc.data().unidadMedida }));
+        console.log("Productos en la colección de Firestore:", productos);
+  
+        const productosPrompt = productos.map(p => `${p.nombre} medido en ${p.unidadMedida}`).join(', ');
+  
+        let prompt = `
+          Dar 3 recetas de desayuno.
+          Adapta los ingredientes de las recetas para que coincidan pura y exclusivamente con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
+          Las recetas deben estar pensadas para una sola persona, y las porciones pueden ser ajustadas para coincidir con eso.
+          Las porciones de los ingredientes deben estar medidas UNICAMENTE en "gramos", "mililitros" o "unidades", convertir las demás a la que sea más conveniente. NO USAR ABREVIACIONES
           Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (1,2,3,etc)}.
         `;
   
