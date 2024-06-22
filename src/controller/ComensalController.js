@@ -1,4 +1,4 @@
-import { db } from "../connection/connection.js";
+import { db } from "../connection/firebaseConnection.js";
 import PersonaController from "./PersonaController.js";
 
 class ComensalController {

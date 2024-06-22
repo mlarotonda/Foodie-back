@@ -1,4 +1,4 @@
-import { db } from "../connection/connection.js";
+import { db } from "../connection/firebaseConnection.js";
 import RatoneandoController from './RatoneandoController.js';
 import GeminiController from './GeminiController.js';
 

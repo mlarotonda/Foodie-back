@@ -1,4 +1,4 @@
-import { db } from "../connection/connection.js";
+import { db } from "../connection/firebaseConnection.js";
 import { v4 as uuidv4 } from "uuid";
 
 // Enum para las restricciones dietéticas

@@ -1,4 +1,4 @@
-import { db } from "../connection/connection.js";
+import { db } from "../connection/firebaseConnection.js";
 import { collection, addDoc, getDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import GeminiController from './GeminiController.js';
 

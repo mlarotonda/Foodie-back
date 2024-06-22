@@ -1,4 +1,4 @@
-import { db } from "../connection/connection.js";
+import { db } from "../connection/firebaseConnection.js";
 
 const validarProducto = (producto) => {
   if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {

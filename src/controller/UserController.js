@@ -1,4 +1,4 @@
-import { db } from "../connection/connection.js";
+import { db } from "../connection/firebaseConnection.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";

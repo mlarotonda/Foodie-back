@@ -1,18 +1,18 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { db } from "../connection/connection.js";
+import { db } from "../connection/firebaseConnection.js";
 import axios from 'axios';
-
-const genAI = new GoogleGenerativeAI("AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw");
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+import createModel from "../connection/geminiConnection.js"
 
 class GeminiController{
   constructor(){}
 
     generarTipoDeProducto = async (nombresProductos) => {
+
+      const model = await createModel();
+
       const productosSnapshot = await db.collection("productos").get();
       const tiposDeProductos = productosSnapshot.docs.map(doc => doc.id).join(', ');
 
-      const prompt = `Tengo los siguientes productos: ${nombresProductos.join(', ')}. En base a sus nombres, a qué tipo de producto pertenecen? Elegir un único tipo de producto. Las opciones son: ${tiposDeProductos}. Responde SOLO con el tipo de producto correspondiente`;
+      const prompt = `Tengo los siguientes productos: ${nombresProductos.join(', ')}. En base a sus nombres, a qué tipo de producto pertenecen? Elegir un ÚNICO tipo de producto. Las opciones son: ${tiposDeProductos}. IMPORTANTE: Responde SOLO con el tipo de producto correspondiente`;
       
       try {
         const result = await model.generateContent(prompt);
@@ -29,6 +29,8 @@ class GeminiController{
     getRecipes = async (req) => {
       console.log("------request");
   
+      const model = await createModel();
+
       const userId = req.user.id;
   
       try {

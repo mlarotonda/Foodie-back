@@ -1,9 +1,7 @@
 import puppeteer from 'puppeteer';
 import admin from 'firebase-admin';
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: "json" };
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const api = 'AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw';
+import createModel from "../connection/geminiConnection.js";
 
 // Inicializar Firebase
 admin.initializeApp({
@@ -12,9 +10,7 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-// Inicializar Google Generative AI
-const genAI = new GoogleGenerativeAI(api);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = await createModel();
 
 async function determinarUnidad(item) {
   console.log(`Ingresando al método determinarUnidad para el producto: ${item}`);
