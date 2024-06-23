@@ -134,9 +134,7 @@ class UserController {
         const recetas = recetasSnap.docs.map((doc) => doc.data());
         const stock = stockSnap.docs.map((doc) => doc.data());
 
-        res
-          .status(200)
-          .json({ ...docSnap.data(), comensales, recetas, stock });
+        res.status(200).json({ ...docSnap.data(), comensales, recetas, stock });
       } else {
         console.log("No se encontró el documento!");
         res.status(404).json({ error: "Usuario no encontrado" });
@@ -194,10 +192,12 @@ class UserController {
 
       // Crear un token con el ID del usuario y una fecha de expiración
       const token = jwt.sign({ id: user.mail }, config.secretKey, {
-        expiresIn: "1h", // El token expira en 1 hora
+        expiresIn: "2h", // El token expira en 2 horas
       });
 
-      res.status(200).json({ auth: true, token });
+      const recetaTemporal = user.recetaTemporal || null;
+
+      res.status(200).json({ auth: true, token, recetaTemporal });
     } catch (e) {
       console.error("Error al autenticar el usuario: ", e.message);
       res.status(500).json({ error: e.message });

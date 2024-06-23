@@ -1,6 +1,6 @@
 import axios from 'axios';
 import admin from "firebase-admin";
-import createModel from "../connection/geminiConnection.js";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: 'json' };
 
 // Inicializar Firebase
@@ -15,7 +15,9 @@ const bucket = admin.storage().bucket();
 const apikey = "AIzaSyAS84CqIgescRVP2lv-G1X8k9TwiKJ7Jwo";
 const cx = "92403c1691e7c486c";
 
-const model = await createModel();
+//const model = await createModel();
+const genAI = new GoogleGenerativeAI("AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw");
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const defaultImageUrl = "https://www.svgrepo.com/show/146075/question.svg";
 

@@ -264,11 +264,11 @@ class StockController {
   }
 
   async consumirProductos(req, res) {
-    const userId = req.userId;
-    const { ingredientes } = req.body;
+    const userId = req.user.id;
+    const { receta } = req.body;
 
     try {
-      for (const ingrediente of ingredientes) {
+      for (const ingrediente of receta.ingredients) {
         const { description: nombreProducto, quantity: cantidad } = ingrediente;
 
         // Validar la cantidad
@@ -311,7 +311,7 @@ class StockController {
       }
 
       // Si todas las validaciones pasan, realizar la resta de los productos
-      for (const ingrediente of ingredientes) {
+      for (const ingrediente of receta.ingredients) {
         const { description: nombreProducto, quantity: cantidad } = ingrediente;
 
         const productoRef = db
