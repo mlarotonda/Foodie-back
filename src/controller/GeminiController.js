@@ -194,12 +194,17 @@ class GeminiController {
           `Ingredientes de la receta ${recipe.name}:`,
           recipe.ingredients
         );
+        recipe.ingredients = recipe.ingredients.map(ingredient => ({
+                description: ingredient.description || "desconocido",
+                quantity: ingredient.quantity || 0,
+                unit: ingredient.unit || "desconocido"
+            }));
       }
 
       console.log("--response");
       console.log("Final JSON:", finalJson);
       console.log(res);
-      return finalJson;
+      return res.status(200).send(finalJson);
     } catch (error) {
       console.error("Error al generar recetas:", error);
       return res.status(500).send({
