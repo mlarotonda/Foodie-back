@@ -28,8 +28,8 @@ class EanController {
 
             const nombresProductos = await RatoneandoController.buscarProductoEnAPI(ean);
             tipoProducto = await GeminiController.generarTipoDeProducto(nombresProductos);
-
-            if (!tipoProducto || tipoProducto.trim() === "") {
+            console.log(tipoProducto)
+            if (!tipoProducto) {
                 throw new Error("El tipo de producto no es válido.");
             }
 
@@ -43,7 +43,7 @@ class EanController {
             */
         }
 
-        res.json({ tipo: tipoProducto });
+        res.json( tipoProducto );
     } catch (e) {
         console.error("Error al procesar el EAN: ", e.message);
         res.status(400).json({ error: `Error al procesar el EAN: ${e.message}` });

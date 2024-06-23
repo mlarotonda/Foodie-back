@@ -20,7 +20,28 @@ class GeminiController{
         const text = await responseText.text();
         const tipoDeProducto = text.trim();
         console.log(`Tipo de producto generado: ${tipoDeProducto}`);
-        return tipoDeProducto;
+
+        if (!tipoDeProducto || tipoDeProducto.trim() === "") {
+          return null;
+          } else {
+              const productoDoc = await db.collection("productos").doc(cleanedText.replace('.', '')).get();
+              console.log(productoDoc)
+              if (productoDoc.exists) {
+                  const productoData = productoDoc.data();
+                  return {
+                      tipo: cleanedText,
+                      unidad: productoData.unidadMedida,
+                      imageUrl: productoData.imageUrl
+                  };
+              } else {
+                  return {
+                      tipo: cleanedText,
+                      unidad: null,
+                      imageUrl: null
+                  };
+              }
+          }
+
       } catch (error) {
         throw new Error(`Error al generar contenido con el modelo: ${error.message}`);
       }
