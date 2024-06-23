@@ -13,21 +13,39 @@ class GeminiController {
       .map((doc) => doc.id)
       .join(", ");
 
-    const prompt = `Tengo los siguientes productos: ${nombresProductos.join(
-      ", "
-    )}. En base a sus nombres, a qué tipo de producto pertenecen? Elegir un ÚNICO tipo de producto. Las opciones son: ${tiposDeProductos}. IMPORTANTE: Responde SOLO con el tipo de producto correspondiente`;
+      const prompt = `Tengo los siguientes productos: ${nombresProductos.join(', ')}. En base a sus nombres, a qué tipo de producto pertenecen? Elegir un ÚNICO tipo de producto. Las opciones son: ${tiposDeProductos}. IMPORTANTE: Responde SOLO con el tipo de producto correspondiente`;
+      
+      try {
+        const result = await model.generateContent(prompt);
+        const responseText = await result.response;
+        const text = await responseText.text();
+        const tipoDeProducto = text.trim();
+        console.log(`Tipo de producto generado: ${tipoDeProducto}`);
 
-    try {
-      const result = await model.generateContent(prompt);
-      const responseText = await result.response;
-      const text = await responseText.text();
-      const tipoDeProducto = text.trim();
-      console.log(`Tipo de producto generado: ${tipoDeProducto}`);
-      return tipoDeProducto;
-    } catch (error) {
-      throw new Error(
-        `Error al generar contenido con el modelo: ${error.message}`
-      );
+        if (!tipoDeProducto || tipoDeProducto.trim() === "") {
+          return null;
+          } else {
+              const productoDoc = await db.collection("productos").doc(cleanedText.replace('.', '')).get();
+              console.log(productoDoc)
+              if (productoDoc.exists) {
+                  const productoData = productoDoc.data();
+                  return {
+                      tipo: cleanedText,
+                      unidad: productoData.unidadMedida,
+                      imageUrl: productoData.imageUrl
+                  };
+              } else {
+                  return {
+                      tipo: cleanedText,
+                      unidad: null,
+                      imageUrl: null
+                  };
+              }
+          }
+
+      } catch (error) {
+        throw new Error(`Error al generar contenido con el modelo: ${error.message}`);
+      }
     }
   };
 
