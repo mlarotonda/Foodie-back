@@ -50,7 +50,7 @@ class GeminiController{
         }));
         console.log("Productos en el stock del usuario:", stockItems);
   
-        const restrictions = userData.restricciones || [];
+        const restrictions = userData.persona.restricciones || [];
         console.log("Restricciones del usuario:", restrictions);
   
         const productosSnapshot = await db.collection('productos').get();
@@ -58,12 +58,13 @@ class GeminiController{
         console.log("Productos en la colección de Firestore:", productos);
   
         const ingredientesPrompt = stockItems.map(item => `${item.nombre}: ${item.cantidad} ${item.unidadMedida}`).join(', ');
+        const restriccionesPrompt = restrictions.join(", ")
         const productosPrompt = productos.map(p => `${p.nombre} medido en ${p.unidadMedida}`).join(', ');
   
         let prompt = `
           Dar 3 recetas de almuerzo/cena que se puedan realizar utilizando SOLO y UNICAMENTE los ingredientes en el stock del usuario. Ingredientes en stock: ${ingredientesPrompt}.
-          El usuario no tiene acceso a otros ingredientes asi que las recetas deben contener unicamente lo que esta en stock.
-          No asumas que el usuario tiene mas ingredientes de los que estan en su stock.
+          El usuario no tiene acceso a otros ingredientes asi que las recetas deben contener UNICAMENTE lo que esta en stock.
+          No asumas que el usuario tiene mas ingredientes de los que estan en su stock, la unica excepcion es agua.
           Adapta los ingredientes de las recetas para que coincidan pura y exclusivamente con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
           Las recetas deben estar pensadas para una sola persona, y las porciones pueden ser ajustadas para coincidir con eso.
           Las porciones de los ingredientes deben estar medidas UNICAMENTE en "gramos", "mililitros" o "unidades", convertir las demás a la que sea más conveniente. NO USAR ABREVIACIONES
@@ -130,25 +131,26 @@ class GeminiController{
         const userData = userDoc.data();
         console.log("Datos del usuario:", userData);
   
-        const restrictions = userData.restricciones || [];
+        const restrictions = userData.persona.restricciones || [];
         console.log("Restricciones del usuario:", restrictions);
   
         const productosSnapshot = await db.collection('productos').get();
         const productos = productosSnapshot.docs.map(doc => ({ nombre: doc.id, unidadMedida: doc.data().unidadMedida }));
         console.log("Productos en la colección de Firestore:", productos);
   
-        const productosPrompt = productos.map(p => `${p.nombre} medido en ${p.unidadMedida}`).join(', ');
-  
+        const restriccionesPrompt = restrictions.join(", ")
+        const productosPrompt = productos.map(p => `${p.nombre} medido en ${p.unidadMedida}`).join(', ');     
+
         let prompt = `
-          Dar 3 recetas de desayuno.
-          Adapta los ingredientes de las recetas para que coincidan pura y exclusivamente con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
+          Dar 3 recetas de almuerzo/cena.
+          Adapta los ingredientes de las recetas para que coincidan exactamente con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
           Las recetas deben estar pensadas para una sola persona, y las porciones pueden ser ajustadas para coincidir con eso.
           Las porciones de los ingredientes deben estar medidas UNICAMENTE en "gramos", "mililitros" o "unidades", convertir las demás a la que sea más conveniente. NO USAR ABREVIACIONES
           Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (1,2,3,etc)}.
         `;
   
         if (restrictions.length > 0) {
-          prompt += ` Tener en cuenta las restricciones de la persona: ${restriccionesPrompt}.`;
+          prompt += ` Es importante tener en cuenta las restricciones de la persona: ${restriccionesPrompt}.`;
         }
   
         const result = await model.generateContent(prompt);

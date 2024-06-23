@@ -47,6 +47,53 @@ class RatoneandoController {
       throw new Error(`Error al llamar a la API de Ratoneando: ${error.message}`);
     }
   }
+
+  obtenerPrecioIngrediente = async (nombreIngrediente) => {
+    const maxRetries = 5;
+    const delayBetweenRetries = 2000; // 2 segundos
+  
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+  
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const response = await axios.get(`https://api.ratoneando.ar/?q=${nombreIngrediente}`, {
+          headers: {
+            'Referer': 'https://ratoneando.ar/'
+          }
+        });
+  
+        const productos = response.data.products.slice(0, 5); // Tomar los primeros 10 resultados
+        if (productos.length === 0) {
+          throw new Error(`No se encontraron productos para el ingrediente: ${nombreIngrediente}`);
+        }
+  
+        const precios = productos.map(producto => producto.price);
+        const precioPromedio = precios.reduce((sum, precio) => sum + precio, 0) / precios.length;
+  
+        return precioPromedio;
+      } catch (error) {
+        if (error.response) {
+          if (error.response.status === 429) {
+            console.error(`Error 429 al obtener el precio del ingrediente ${nombreIngrediente}: Demasiadas solicitudes, reintentando...`);
+            await delay(delayBetweenRetries);
+          } else if (error.response.status === 498) {
+            console.error(`Error 498 al obtener el precio del ingrediente ${nombreIngrediente}: Token expirado o problema de autenticación.`);
+            return null;
+          } else {
+            console.error(`Error ${error.response.status} al obtener el precio del ingrediente ${nombreIngrediente}:`, error.message);
+            return null;
+          }
+        } else {
+          console.error(`Error de red al obtener el precio del ingrediente ${nombreIngrediente}:`, error.message);
+          return null;
+        }
+      }
+    }
+    console.error(`Error al obtener el precio del ingrediente ${nombreIngrediente}: Se alcanzó el número máximo de reintentos`);
+    return null;
+  };
+  
+
 }
 
 export default new RatoneandoController();

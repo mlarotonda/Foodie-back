@@ -1,6 +1,7 @@
 import { db } from "../connection/firebaseConnection.js";
 import { collection, addDoc, getDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import GeminiController from './GeminiController.js';
+import RatoneandoController from "./RatoneandoController.js";
 
 // Validación de la receta
 const validarReceta = (receta) => {
@@ -117,6 +118,33 @@ class RecetaController{
       console.error("Error al eliminar el documento: ", e);
     }
   };
+
+  calcularPrecio = async (req, res) => {
+    const { receta } = req.body; // La receta seleccionada desde el front
+
+    try {
+      let precioTotal = 0;
+
+      for (const ingrediente of receta.ingredients) {
+        try {
+          const precioIngrediente = await RatoneandoController.obtenerPrecioIngrediente(ingrediente.description);
+          if (precioIngrediente) {
+            //Se asume precio por kilo/litro y se multiplica por g/ml usados en el plato.
+            //Falla con los ingredientes medidos en unidades, pero no deja de ser una estimacion
+            const precioAprox = (precioIngrediente / 1000) * ingrediente.quantity;
+            precioTotal += precioAprox;
+          }
+        } catch (error) {
+          console.error(`Error al obtener el precio del ingrediente ${ingrediente.description}: ${error.message}`);        
+        }
+      }
+
+      res.status(200).json({ precioEstimado: precioTotal });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Error al calcular el precio: ' + error.message });
+    }
+  };
+
 }
 
 export default new RecetaController();

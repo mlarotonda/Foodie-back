@@ -265,10 +265,10 @@ class StockController {
 
   async consumirProductos(req, res) {
     const userId = req.userId;
-    const { ingredientes } = req.body;
+    const { receta } = req.body;
 
     try {
-      for (const ingrediente of ingredientes) {
+      for (const ingrediente of receta.ingredientes) {
         const { description: nombreProducto, quantity: cantidad } = ingrediente;
 
         // Validar la cantidad
