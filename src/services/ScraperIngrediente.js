@@ -146,6 +146,8 @@ const urls = [
   'https://www.carrefour.com.ar/Carnes-y-Pescados',
   'https://www.carrefour.com.ar/Frutas-y-Verduras',
   'https://www.carrefour.com.ar/Bebidas',
+  'https://www.carrefour.com.ar/Panaderia',
+  'https://www.carrefour.com.ar/Congelados',
 ];
 
 (async () => {
