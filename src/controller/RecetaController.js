@@ -2,6 +2,7 @@ import { db } from "../connection/firebaseConnection.js";
 import { collection, addDoc, getDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import GeminiController from './GeminiController.js';
 import RatoneandoController from "./RatoneandoController.js";
+import StockController from "./StockController.js"
 
 // Validación de la receta
 const validarReceta = (receta) => {
@@ -10,9 +11,6 @@ const validarReceta = (receta) => {
   }
   if (typeof receta.instrucciones !== 'string' || receta.instrucciones.trim() === '') {
     throw new Error("Las instrucciones son obligatorias y deben ser una cadena no vacía.");
-  }
-  if (receta.puntuacion !== undefined && (typeof receta.puntuacion !== 'number' || receta.puntuacion < 0 || receta.puntuacion > 5)) {
-    throw new Error("La puntuacion debe ser un número entre 0 y 5.");
   }
   if (!Array.isArray(receta.ingredientes) || receta.ingredientes.length === 0) {
     throw new Error("Debe haber al menos un ingrediente.");
@@ -26,6 +24,12 @@ const validarReceta = (receta) => {
     }
   });
 };
+
+const validarPuntuacion = (puntuacion) =>{
+  if (puntuacion !== undefined && (typeof puntuacion !== 'number' || puntuacion < 1 || puntuacion > 5)) {
+    throw new Error("La puntuacion debe ser un número entre 1 y 5.");
+  }
+}
 
 class RecetaController{
 
@@ -49,16 +53,17 @@ class RecetaController{
 
   guardarRecetaTemporal = async (req, res) => {
 
-    const userId = req.user.Id;
-    const receta = req.body;
+    const userId = req.user.id;
+    const {receta, usaStock} = req.body;
 
     try {
-      const userDocRef = await db.collection('usuarios').doc(String(userId)).get();
+      const userDocRef = await db.collection('usuarios').doc(String(userId));
   
-      await updateDoc(userDocRef, {
-        recetaTemporal: receta
+      await userDocRef.update({
+        recetaTemporal: { ...receta, usaStock }
       });
   
+      console.log('Receta temporal guardada exitosamente')
       res.status(200).json({ success: true, message: 'Receta temporal guardada exitosamente' });
     } catch (error) {
       console.error('Error al guardar la receta temporal:', error.message);
@@ -167,6 +172,59 @@ class RecetaController{
       res.status(200).json({ precioEstimado: precioTotal });
     } catch (error) {
       res.status(500).json({ success: false, message: 'Error al calcular el precio: ' + error.message });
+    }
+  };
+
+  puntuarReceta = async (req, res) => {
+    const userId = req.user.id;
+    const { puntuacion } = req.body;
+  
+    try {
+      await validarPuntuacion(puntuacion);
+
+      const userDocRef = db.collection('usuarios').doc(String(userId));
+      const docSnap = await userDocRef.get();
+  
+      if (!docSnap.exists) {
+        return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+      }
+  
+      const userData = docSnap.data();
+      const recetaTemporal = userData.recetaTemporal;
+  
+      if (!recetaTemporal) {
+        return res.status(404).json({ success: false, message: 'No hay receta temporal para puntuar' });
+      }
+  
+      // Si usaStock es true, consumir productos del stock
+      if (recetaTemporal.usaStock) {
+          await StockController.consumirProductos(recetaTemporal);
+      }
+  
+      // Crear una nueva receta con la puntuación y guardar en la colección recetas del usuario
+      const recetaPuntuada = {
+        ...recetaTemporal,
+        puntuacion
+      };
+  
+      // Generar el ID de la receta usando el nombre y la fecha actual
+      const now = new Date();
+      const fechaActual = now.toISOString().split('T')[0];// Obtener la fecha en formato yyyy-MM-dd
+      const recetaId = `${recetaTemporal.name}_${fechaActual}`;
+
+      const recetasRef = db.collection('usuarios').doc(String(userId)).collection('recetas');
+      await recetasRef.doc(recetaId).set(recetaPuntuada);
+  
+      // Anular el campo recetaTemporal en el documento del usuario
+      await userDocRef.update({
+        recetaTemporal: null
+      });
+  
+      console.log("Receta guardada exitosamente! ${recetaId}")
+      res.status(200).json({ success: true, message: 'Receta puntuada y guardada exitosamente, stock actualizado si correspondía' });
+    } catch (error) {
+      console.error('Error al puntuar la receta:', error.message);
+      res.status(500).json({ success: false, message: 'Error al puntuar la receta: ' + error.message });
     }
   };
 
