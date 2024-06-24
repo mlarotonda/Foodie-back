@@ -6,7 +6,7 @@ import PersonaController from "./PersonaController.js";
 
 const saltRounds = 10;
 
-const validarUsuario = async (usuario) => {  
+const validarUsuario = async (usuario) => {
   await validarEmail(usuario.mail);
   await validarPassword(usuario.password);
 };
@@ -21,15 +21,12 @@ const validarEmail = async (email) => {
       "El correo electrónico es obligatorio y debe ser una cadena no vacía."
     );
   }
-  // Validar si el correo ya está en uso
   const userRef = db.collection("usuarios").doc(email);
   const docSnap = await userRef.get();
   if (docSnap.exists) {
-    throw new Error(
-      "El correo electrónico ya está en uso."
-    );
-  };
-}
+    throw new Error("El correo electrónico ya está en uso.");
+  }
+};
 
 const validarPassword = (password) => {
   if (typeof password !== "string" || password.trim() === "") {
@@ -37,46 +34,52 @@ const validarPassword = (password) => {
       "La contraseña es obligatoria y debe ser una cadena no vacía."
     );
   }
-}
+};
+
 
 class UserController {
   async crearUsuario(req, res) {
-    const {
-      mail,
-      password,
-      nombre,
-      apellido,
-      edad,
-      restricciones = [],
-    } = req.body;
-
     try {
+      if (!req.body) {
+        throw new Error("No se recibieron datos en la solicitud.");
+      }
+      console.log(req.body);
+
+     const {
+       mail,
+       password,
+       persona: { nombre, apellido, edad, restricciones = [] } = {}, // Destructure persona from request body
+     } = req.body;
+
+      console.log("Datos recibidos para crear usuario:", {
+        mail,
+        password,
+        nombre,
+        apellido,
+        edad,
+        restricciones,
+      });
+
       await validarUsuario({ mail, password });
       const personaUser = { nombre, apellido, edad, restricciones };
-      
-      console.log(personaUser);
+
+      // Additional logging before creating persona
+      console.log("Datos enviados para crear persona:", personaUser);
 
       const persona = await PersonaController.crearPersona(personaUser);
+      if (persona.error) {
+        throw new Error(persona.error);
+      }
 
-      // Hashear la contraseña
       const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-      // Inicializar datos del usuario
       const nuevoUsuario = {
         mail,
         password: hashedPassword,
-        persona
+        persona,
       };
 
-      console.log(nuevoUsuario);
-
-      const userRef = db.collection("usuarios").doc(mail);
-
-      // Guardar usuario en Firestore con mail como ID
+      const userRef = db.collection("usuarios").doc(mail.trim());
       await userRef.set(nuevoUsuario);
-
-      const docRef = db.collection("personas").doc(persona.personaId);
-      await docRef.set(persona);
 
       console.log("Usuario creado con ID: ", mail);
       res.status(201).json({ id: mail, ...nuevoUsuario });
@@ -206,8 +209,7 @@ class UserController {
 
   // Actualizar un usuario
   async actualizarUsuario(req, res) {
-
-    const userId  = req.userId;
+    const userId = req.userId;
     const { mail, password, persona } = req.body;
 
     try {
@@ -247,23 +249,23 @@ class UserController {
     try {
       const userRef = db.collection("usuarios").doc(userId);
 
-       // Eliminar documentos de la subcolección comensales
-       let snapshot = await userRef.collection("comensales").get();
-       for (const doc of snapshot.docs) {
-         await doc.ref.delete();
-       }
- 
-       // Eliminar documentos de la subcolección recetas
-       snapshot = await userRef.collection("recetas").get();
-       for (const doc of snapshot.docs) {
-         await doc.ref.delete();
-       }
- 
-       // Eliminar documentos de la subcolección stock
-       snapshot = await userRef.collection("stock").get();
-       for (const doc of snapshot.docs) {
-         await doc.ref.delete();
-       }
+      // Eliminar documentos de la subcolección comensales
+      let snapshot = await userRef.collection("comensales").get();
+      for (const doc of snapshot.docs) {
+        await doc.ref.delete();
+      }
+
+      // Eliminar documentos de la subcolección recetas
+      snapshot = await userRef.collection("recetas").get();
+      for (const doc of snapshot.docs) {
+        await doc.ref.delete();
+      }
+
+      // Eliminar documentos de la subcolección stock
+      snapshot = await userRef.collection("stock").get();
+      for (const doc of snapshot.docs) {
+        await doc.ref.delete();
+      }
 
       // Eliminar el documento del usuario
       await userRef.delete();
