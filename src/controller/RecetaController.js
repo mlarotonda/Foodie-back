@@ -6,41 +6,20 @@ import StockController from "./StockController.js"
 
 class RecetaController{
 
-  generarRecetas = async (req, res) => {
-    try {
-      const recetas = await GeminiController.getUserRecipes(req, res);
-      return recetas
-    } catch (error) {
-      return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
-    }
+  generarRecetas = (req, res) => {
+    return generateRecipes(req, res, GeminiController.getUserRecipes);
   };
 
-  generarRecetasGrupal = async (req, res) => {
-    try {
-      const recetas = await GeminiController.getUserGuestsRecipes(req, res);
-      return res.status(200).json(recetas);
-    } catch (error) {
-      return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
-    }
+  generarRecetasGrupal = (req, res) => {
+    return generateRecipes(req, res, GeminiController.getUserGuestsRecipes);
   };
 
-
-  generarRecetasRandom = async (req, res) => {
-    try {
-      const recetas = await GeminiController.getRandomRecipes(req, res);
-      return recetas;
-    } catch (error) {
-      return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
-    }
+  generarRecetasRandom = (req, res) => {
+    return generateRecipes(req, res, GeminiController.getRandomRecipes);
   };
 
-  generarRecetasRandomGrupal = async (req, res) => {
-    try {
-      const recetas = await GeminiController.getRandomGuestsRecipes(req, res);
-      //return res.status(200).json(recetas);
-    } catch (error) {
-      //return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
-    }
+  generarRecetasRandomGrupal = (req, res) => {
+    return generateRecipes(req, res, GeminiController.getRandomGuestsRecipes);
   };
 
   guardarRecetaTemporal = async (req, res) => {
@@ -222,20 +201,20 @@ export default new RecetaController();
 
 // Validación de la receta
 const validarReceta = (receta) => {
-  if (typeof receta.titulo !== 'string' || receta.titulo.trim() === '') {
+  if (typeof receta.name !== 'string' || receta.name.trim() === '') {
     throw new Error("El título es obligatorio y debe ser una cadena no vacía.");
   }
-  if (typeof receta.instrucciones !== 'string' || receta.instrucciones.trim() === '') {
+  if (typeof receta.steps !== 'string' || receta.steps.trim() === '') {
     throw new Error("Las instrucciones son obligatorias y deben ser una cadena no vacía.");
   }
-  if (!Array.isArray(receta.ingredientes) || receta.ingredientes.length === 0) {
+  if (!Array.isArray(receta.ingredients) || receta.ingredients.length === 0) {
     throw new Error("Debe haber al menos un ingrediente.");
   }
-  receta.ingredientes.forEach(ingrediente => {
-    if (typeof ingrediente.ingrediente !== 'string' || ingrediente.ingrediente.trim() === '') {
+  receta.ingredients.forEach(ingrediente => {
+    if (typeof ingrediente.description !== 'string' || ingrediente.description.trim() === '') {
       throw new Error("El ingrediente es obligatorio y debe ser una cadena no vacía.");
     }
-    if (typeof ingrediente.cantidad !== 'number' || ingrediente.cantidad <= 0) {
+    if (typeof ingrediente.quantity !== 'number' || ingrediente.quantity <= 0) {
       throw new Error("La cantidad del ingrediente debe ser un número positivo.");
     }
   });
@@ -259,3 +238,7 @@ const obtenerRecetas = async (userId, coleccion, res) => {
       res.status(500).json({ success: false, message: 'Error al obtener las recetas de ${coleccion}: ' + error.message });
   }
 };
+
+const generateRecipes = async (req, res, method) => {
+  await method(req, res);
+}

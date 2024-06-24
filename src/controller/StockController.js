@@ -1,21 +1,5 @@
 import { db } from "../connection/firebaseConnection.js";
 
-const validarProducto = (producto) => {
-  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
-    throw new Error(
-      "La cantidad del producto debe ser un número entero positivo."
-    );
-  }
-};
-
-const validarProductoParaConsumo = (producto) => {
-  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
-    throw new Error(
-      "La cantidad del producto debe ser un número entero positivo."
-    );
-  }
-};
-
 class StockController {
   // Método para confirmar el producto por parte del usuario
   async confirmacionUsuario(req, res) {
@@ -348,3 +332,19 @@ class StockController {
 }
 
 export default new StockController();
+
+const validarProducto = (producto) => {
+  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
+    throw new Error(
+      "La cantidad del producto debe ser un número entero positivo."
+    );
+  }
+};
+
+const validarProductoParaConsumo = (producto) => {
+  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
+    throw new Error(
+      "La cantidad del producto debe ser un número entero positivo."
+    );
+  }
+};
