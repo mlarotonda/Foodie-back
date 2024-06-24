@@ -98,8 +98,6 @@ class StockController {
     try {
       validarProducto({ cantidad });
 
-      const ultimaCarga = new Date().toISOString();
-
       const productoRef = db
         .collection("usuarios")
         .doc(String(userId))
@@ -111,7 +109,7 @@ class StockController {
       if (docSnap.exists) {
         await productoRef.update({
           cantidad: productoExistente.cantidad + cantidad,
-          ultimaCarga,
+          ultimaCarga: new Date().toISOString(),
         });
       } else {
         const ingredienteSnapshot = await db
@@ -280,9 +278,7 @@ class StockController {
           .doc(nombreProducto)
           .get();
         if (!productoDoc.exists) {
-          return res.status(404).json({
-            error: `Producto ${nombreProducto} no encontrado en la colección de productos.`,
-          });
+          return res.status(404).json({error: `Producto ${nombreProducto} no encontrado en la colección de productos.`});
         }
 
         // Buscar el producto en el stock del usuario

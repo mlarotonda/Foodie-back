@@ -6,39 +6,6 @@ import PersonaController from "./PersonaController.js";
 
 const saltRounds = 10;
 
-const validarUsuario = async (usuario) => {  
-  await validarEmail(usuario.mail);
-  await validarPassword(usuario.password);
-};
-
-const validarEmail = async (email) => {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!regex.test(email)) {
-    throw new Error("El correo electrónico no es válido.");
-  }
-  if (typeof email !== "string" || email.trim() === "") {
-    throw new Error(
-      "El correo electrónico es obligatorio y debe ser una cadena no vacía."
-    );
-  }
-  // Validar si el correo ya está en uso
-  const userRef = db.collection("usuarios").doc(email);
-  const docSnap = await userRef.get();
-  if (docSnap.exists) {
-    throw new Error(
-      "El correo electrónico ya está en uso."
-    );
-  };
-}
-
-const validarPassword = (password) => {
-  if (typeof password !== "string" || password.trim() === "") {
-    throw new Error(
-      "La contraseña es obligatoria y debe ser una cadena no vacía."
-    );
-  }
-}
-
 class UserController {
   async crearUsuario(req, res) {
     const {
@@ -107,7 +74,7 @@ class UserController {
 
       // Crear un token con el ID del usuario y una fecha de expiración
       const token = jwt.sign({ id: user.mail }, config.secretKey, {
-        expiresIn: "3h", // El token expira en 3 horas
+        expiresIn: "2h", // El token expira en 3 horas
       });
 
       res.status(200).json({ auth: true, token });
@@ -126,15 +93,19 @@ class UserController {
       const docSnap = await userRef.get();
 
       if (docSnap.exists) {
-        const comensalesSnap = await userRef.collection("comensales").get();
-        const recetasSnap = await userRef.collection("recetas").get();
+        const comensalesSnap = await userRef.collection("grupoFamiliar").get();
+        const historialSnap = await userRef.collection("historial").get();
+        const creadasSnap = await userRef.collection("creadas").get();
+        const favoritasSnap = await userRef.collection("favoritas").get();
         const stockSnap = await userRef.collection("stock").get();
 
         const comensales = comensalesSnap.docs.map((doc) => doc.data());
-        const recetas = recetasSnap.docs.map((doc) => doc.data());
+        const historial = historialSnap.docs.map((doc) => doc.data());
+        const creadas = creadasSnap.docs.map((doc) => doc.data());
+        const favoritas = favoritasSnap.docs.map((doc) => doc.data());
         const stock = stockSnap.docs.map((doc) => doc.data());
 
-        res.status(200).json({ ...docSnap.data(), comensales, recetas, stock });
+        res.status(200).json({ ...docSnap.data(), comensales, historial, creadas, favoritas, stock });
       } else {
         console.log("No se encontró el documento!");
         res.status(404).json({ error: "Usuario no encontrado" });
@@ -154,15 +125,19 @@ class UserController {
         const userData = doc.data();
         const userRef = db.collection("usuarios").doc(doc.id);
 
-        const comensalesSnap = await userRef.collection("comensales").get();
-        const recetasSnap = await userRef.collection("recetas").get();
+        const comensalesSnap = await userRef.collection("grupoFamiliar").get();
+        const historialSnap = await userRef.collection("historial").get();
+        const creadasSnap = await userRef.collection("creadas").get();
+        const favoritasSnap = await userRef.collection("favoritas").get();
         const stockSnap = await userRef.collection("stock").get();
 
         const comensales = comensalesSnap.docs.map((doc) => doc.data());
-        const recetas = recetasSnap.docs.map((doc) => doc.data());
+        const historial = historialSnap.docs.map((doc) => doc.data());
+        const creadas = creadasSnap.docs.map((doc) => doc.data());
+        const favoritas = favoritasSnap.docs.map((doc) => doc.data());
         const stock = stockSnap.docs.map((doc) => doc.data());
 
-        usuarios.push({ ...userData, comensales, recetas, stock });
+        usuarios.push({ ...userData, comensales, historial, creadas, favoritas, stock });
       }
       res.status(200).json(usuarios);
     } catch (e) {
@@ -247,34 +222,79 @@ class UserController {
     try {
       const userRef = db.collection("usuarios").doc(userId);
 
-       // Eliminar documentos de la subcolección comensales
-       let snapshot = await userRef.collection("comensales").get();
-       for (const doc of snapshot.docs) {
-         await doc.ref.delete();
-       }
+        // Eliminar documentos de la subcolección comensales
+        let snapshot = await userRef.collection("grupoFamiliar").get();
+        for (const doc of snapshot.docs) {
+          await doc.ref.delete();
+        }
  
-       // Eliminar documentos de la subcolección recetas
-       snapshot = await userRef.collection("recetas").get();
-       for (const doc of snapshot.docs) {
-         await doc.ref.delete();
-       }
+        // Eliminar documentos de la subcolección recetas
+        snapshot = await userRef.collection("historial").get();
+        for (const doc of snapshot.docs) {
+          await doc.ref.delete();
+        }
+
+        // Eliminar documentos de la subcolección creadas
+        snapshot = await userRef.collection("creadas").get();
+        for (const doc of snapshot.docs) {
+          await doc.ref.delete();
+        }
+
+        // Eliminar documentos de la subcolección favoritas
+        snapshot = await userRef.collection("favoritas").get();
+        for (const doc of snapshot.docs) {
+          await doc.ref.delete();
+        }  
  
-       // Eliminar documentos de la subcolección stock
-       snapshot = await userRef.collection("stock").get();
-       for (const doc of snapshot.docs) {
-         await doc.ref.delete();
-       }
+        // Eliminar documentos de la subcolección stock
+        snapshot = await userRef.collection("stock").get();
+        for (const doc of snapshot.docs) {
+          await doc.ref.delete();
+        }
 
-      // Eliminar el documento del usuario
-      await userRef.delete();
+          // Eliminar el documento del usuario
+          await userRef.delete();
 
-      console.log("Usuario eliminado con éxito");
-      res.status(200).json({ message: "Usuario eliminado con éxito" });
+          console.log("Usuario eliminado con éxito");
+          res.status(200).json({ message: "Usuario eliminado con éxito" });
     } catch (e) {
-      console.error("Error al eliminar el usuario: ", e.message);
-      res.status(500).json({ error: e.message });
+          console.error("Error al eliminar el usuario: ", e.message);
+          res.status(500).json({ error: e.message });
     }
   }
 }
 
 export default new UserController();
+
+const validarUsuario = async (usuario) => {  
+  await validarEmail(usuario.mail);
+  await validarPassword(usuario.password);
+};
+
+const validarEmail = async (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!regex.test(email)) {
+    throw new Error("El correo electrónico no es válido.");
+  }
+  if (typeof email !== "string" || email.trim() === "") {
+    throw new Error(
+      "El correo electrónico es obligatorio y debe ser una cadena no vacía."
+    );
+  }
+  // Validar si el correo ya está en uso
+  const userRef = db.collection("usuarios").doc(email);
+  const docSnap = await userRef.get();
+  if (docSnap.exists) {
+    throw new Error(
+      "El correo electrónico ya está en uso."
+    );
+  };
+}
+
+const validarPassword = (password) => {
+  if (typeof password !== "string" || password.trim() === "") {
+    throw new Error(
+      "La contraseña es obligatoria y debe ser una cadena no vacía."
+    );
+  }
+}

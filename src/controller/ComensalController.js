@@ -3,7 +3,7 @@ import PersonaController from "./PersonaController.js";
 
 class ComensalController {
 
-   // Método para agregar un comensal a la colección comensales de un usuario
+   // Método para agregar un comensal a la colección grupoFamiliar de un usuario
    agregarComensal = async (req, res) => {
     const userId = req.userId;
     const { nombre, apellido, edad, restricciones } = req.body;
@@ -18,14 +18,17 @@ class ComensalController {
 
       const persona = personaResult.data;
 
-      // Agregar persona a la colección comensales del usuario
+      // Agregar persona a la colección grupoFamiliar del usuario
       const comensalesRef = db
         .collection("usuarios")
         .doc(userId)
-        .collection("comensales")
+        .collection("grupoFamiliar")
         .doc(persona.id);
 
-      await comensalesRef.set({ ...persona, creacion: new Date().toISOString() });
+      await comensalesRef.set({
+        ...persona,
+        creacion: new Date().toISOString()
+        });
 
       const docRef = db.collection("personas").doc(persona.personaId);
       await docRef.set(persona);
@@ -57,7 +60,7 @@ class ComensalController {
       const comensalRef = db
         .collection("usuarios")
         .doc(userId)
-        .collection("comensales")
+        .collection("grupoFamiliar")
         .doc(personaId);
 
       await comensalRef.update({
@@ -92,7 +95,7 @@ class ComensalController {
       const comensalesRef = db
         .collection("usuarios")
         .doc(userId)
-        .collection("comensales")
+        .collection("grupoFamiliar")
         .doc(personaId);
 
       await comensalesRef.delete();
@@ -125,7 +128,7 @@ class ComensalController {
       const comensalesSnapshot = await db
         .collection("usuarios")
         .doc(userId)
-        .collection("comensales")
+        .collection("grupoFamiliar")
         .get();
       const comensales = comensalesSnapshot.docs.map((doc) => ({
         id: doc.id,

@@ -37,9 +37,9 @@ class RecetaController{
   generarRecetasRandomGrupal = async (req, res) => {
     try {
       const recetas = await GeminiController.getRandomGuestsRecipes(req, res);
-      return res.status(200).json(recetas);
+      //return res.status(200).json(recetas);
     } catch (error) {
-      return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
+      //return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
     }
   };
 
@@ -61,7 +61,23 @@ class RecetaController{
       console.error('Error al guardar la receta temporal:', error.message);
       res.status(500).json({ success: false, message: 'Error al guardar la receta temporal: ' + error.message });
     }
-  }
+  };
+  
+  eliminarRecetaTemporal = async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const userRef = db.collection('usuarios').doc(String(userId));
+        const userDoc = await userRef.get();
+        
+        await userDoc.update({recetaTemporal: null});
+
+        res.status(200).json({ success: true, message: 'Receta Temporal eliminada exitosamente'});
+    } catch (error) {
+        console.error('Error al aliminar la receta:', error.message);
+        res.status(500).json({ success: false, message: 'Error al aliminar la receta: ' + error.message });
+    }
+  };
 
   // Crear una nueva receta
   crearRecetaPersonalizada = async (req, res) => {
@@ -81,97 +97,29 @@ class RecetaController{
          momentoCreacion:new Date().toISOString()
         };
 
-      const recetarioRef = db.collection('usuarios').doc(String(userId)).collection('recetario'); //REVISAR
+      const recetarioRef = db.collection('usuarios').doc(String(userId)).collection('creadas');
       await recetarioRef.doc(recetaId).set(recetaPersonalizada);
-      
-      
-      const docRef = await addDoc(collection(db, "recetas"), receta);
-      console.log("Documento escrito con ID: ", docRef.id);
+
+      res.status(200).json({ success: true, message: 'Receta creada exitosamente', recetaId });
     } catch (e) {
-      console.error("Error al agregar el documento: ", e.message);
-    }
-  };
-
-  // Obtener una receta por ID
-  obtenerReceta = async (id) => {
-    const docRef = doc(db, "recetas", id);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      return docSnap.data();
-    } else {
-      console.log("No se encontró el documento!");
-      return null;
+        console.error("Error al agregar la receta: ", e.message);
+        res.status(500).json({ success: false, message: 'Error al agregar la receta: ' + e.message });
     }
   };
 
   obtenerFavoritas = async (req, res) => {
     const userId = req.user.id;
+    await obtenerRecetas(userId, 'favoritas', res);
+  };
 
-    try {
-        const favsRef = db.collection('usuarios').doc(String(userId)).collection('favoritas');
-        const querySnapshot = await favsRef.get();
-        const recetasFavs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        res.status(200).json({ success: true, recetas: recetasFavs });
-    } catch (error) {
-        console.error('Error al obtener el historial:', error.message);
-        res.status(500).json({ success: false, message: 'Error al obtener el historial: ' + error.message });
-    }
+  obtenerCreadas = async (req, res) => {
+    const userId = req.user.id;
+    await obtenerRecetas(userId, 'creadas', res);
   };
 
   obtenerHistorial = async (req, res) => {
     const userId = req.user.id;
-
-    try {
-        const historialRef = db.collection('usuarios').doc(String(userId)).collection('historial');
-        const querySnapshot = await historialRef.get();
-        const recetasHistorial = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        res.status(200).json({ success: true, recetas: recetasHistorial });
-    } catch (error) {
-        console.error('Error al obtener el historial:', error.message);
-        res.status(500).json({ success: false, message: 'Error al obtener el historial: ' + error.message });
-    }
-  };
-
-  // Actualizar una receta
-  actualizarReceta = async (id, recetaActualizada) => {
-    try {
-      validarReceta(recetaActualizada);
-      const docRef = doc(db, "recetas", id);
-      await updateDoc(docRef, recetaActualizada);
-      console.log("Documento actualizado con éxito");
-    } catch (e) {
-      console.error("Error al actualizar el documento: ", e.message);
-    }
-  };
-
-  // Eliminar una receta
-  eliminarReceta = async (id) => {
-    const docRef = doc(db, "recetas", id);
-    try {
-      await deleteDoc(docRef);
-      console.log("Documento eliminado con éxito");
-    } catch (e) {
-      console.error("Error al eliminar el documento: ", e);
-    }
-  };
-
-  eliminarRecetaTemporal = async (req, res) => {
-    const userId = req.user.id;
-
-    try {
-        const userRef = db.collection('usuarios').doc(String(userId));
-        const userDoc = await userRef.get();
-        
-        await userDoc.update({recetaTemporal: null});
-
-        res.status(200).json({ success: true, message: 'Receta Temporal eliminada exitosamente'});
-    } catch (error) {
-        console.error('Error al aliminar la receta:', error.message);
-        res.status(500).json({ success: false, message: 'Error al aliminar la receta: ' + error.message });
-    }
+    await obtenerRecetas(userId, 'historial', res);
   };
 
   calcularPrecio = async (req, res) => {
@@ -224,11 +172,12 @@ class RecetaController{
       const recetaTemporal = userData.recetaTemporal;
   
       if (!recetaTemporal) {
-        return res.status(404).json({ success: false, message: 'No hay receta temporal para puntuar' });
+        return res.status(404).json({ success: false, message: 'No hay receta para puntuar' });
       }
   
       // Si usaStock es true, consumir productos del stock
       if (recetaTemporal.usaStock) {
+        console.log("Receta usa stock. Consumiendo ingredientes");
           await StockController.consumirProductos(recetaTemporal);
       }
   
@@ -245,16 +194,22 @@ class RecetaController{
       const fechaActual = now.toISOString().split('T')[0];// Obtener la fecha en formato yyyy-MM-dd
       const recetaId = `${recetaTemporal.name}_${fechaActual}`;
 
-      const recetasRef = db.collection('usuarios').doc(String(userId)).collection('recetas');
+      const recetasRef = db.collection('usuarios').doc(String(userId)).collection('historial');
       await recetasRef.doc(recetaId).set(recetaPuntuada);
+
+      if(favorita){
+        const favRef = db.collection('usuarios').doc(String(userId)).collection('favoritas');
+        await favRef.doc(recetaId).set(recetaPuntuada);
+        console.log("Receta guardada en favoritos exitosamente! ${recetaId}")
+      }
   
       // Anular el campo recetaTemporal en el documento del usuario
       await userDocRef.update({
         recetaTemporal: null
       });
   
-      console.log("Receta guardada exitosamente! ${recetaId}")
-      res.status(200).json({ success: true, message: 'Receta puntuada y guardada exitosamente, stock actualizado si correspondía' });
+      console.log("Receta agregada al historial exitosamente! ${recetaId}")
+      res.status(200).json({ success: true, message: 'Receta puntuada, stock actualizado si correspondía' });
     } catch (error) {
       console.error('Error al puntuar la receta:', error.message);
       res.status(500).json({ success: false, message: 'Error al puntuar la receta: ' + error.message });
@@ -291,3 +246,16 @@ const validarPuntuacion = (puntuacion) =>{
     throw new Error("La puntuacion debe ser un número entre 1 y 5.");
   }
 }
+
+const obtenerRecetas = async (userId, coleccion, res) => {
+  try {
+      const recetasRef = db.collection('usuarios').doc(String(userId)).collection(coleccion);
+      const querySnapshot = await recetasRef.get();
+      const recetas = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      res.status(200).json({ success: true, recetas });
+  } catch (error) {
+      console.error('Error al obtener las recetas de ${coleccion}:', error.message);
+      res.status(500).json({ success: false, message: 'Error al obtener las recetas de ${coleccion}: ' + error.message });
+  }
+};

@@ -100,8 +100,8 @@ class GeminiController{
         const responseText = await result.response;
         const rawText = await responseText.text();
   
-        const finalJason = await parseadorJson(rawText);
-        await asignarImagen(finalJason);
+        const finalJson = await parseadorJson(rawText);
+        await asignarImagen(finalJson);
   
         console.log("--response");
         console.log("Final JSON:", finalJson);
@@ -176,8 +176,8 @@ class GeminiController{
         const responseText = await result.response;
         const rawText = await responseText.text();
   
-        const finalJason = await parseadorJson(rawText);
-        await asignarImagen(finalJason);
+        const finalJson = await parseadorJson(rawText);
+        await asignarImagen(finalJson);
   
         console.log("--response");
         console.log("Final JSON:", finalJson);
@@ -230,8 +230,8 @@ class GeminiController{
         const responseText = await result.response;
         const rawText = await responseText.text();
   
-        const finalJason = await parseadorJson(rawText);
-        await asignarImagen(finalJason);
+        const finalJson = await parseadorJson(rawText);
+        await asignarImagen(finalJson);
   
         console.log("--response");
         console.log("Final JSON:", finalJson);
@@ -262,15 +262,20 @@ class GeminiController{
         const userRestrictions = userData.persona.restricciones || [];
         let allRestrictions = [...new Set(userRestrictions)];
 
-        for (let persona of personas) {
-            const personaDoc = await db.collection('personas').doc(persona.id).get();
-            if (personaDoc.exists) {
-                const personaData = personaDoc.data();
-                const personaRestrictions = personaData.restricciones || [];
-                allRestrictions = [...new Set([...allRestrictions, ...personaRestrictions])];
-            }
+        let cantidadPersonas = 1;
+
+        if(personas!==null){
+          for (let persona of personas) {
+              const personaDoc = await db.collection('personas').doc(persona.id).get();
+              if (personaDoc.exists) {
+                  const personaData = personaDoc.data();
+                  const personaRestrictions = personaData.restricciones || [];
+                  allRestrictions = [...new Set([...allRestrictions, ...personaRestrictions])];
+              }
+          }
+          console.log("Restricciones combinadas:", allRestrictions);
+          cantidadPersonas += personas.length();
         }
-        console.log("Restricciones combinadas:", allRestrictions);
   
         const productosSnapshot = await db.collection('productos').get();
         const productos = productosSnapshot.docs.map(doc => ({ nombre: doc.id, unidadMedida: doc.data().unidadMedida }));
@@ -282,7 +287,7 @@ class GeminiController{
         let prompt = `
           Dar 3 recetas de ${comida}
           Adapta los ingredientes de las recetas para que coincidan pura y exclusivamente con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
-          Las recetas deben estar pensadas para ${personas.length + 1} personas, y las porciones pueden ser ajustadas para coincidir con eso.
+          Las recetas deben estar pensadas para ${cantidadPersonas} personas, y las porciones pueden ser ajustadas para coincidir con eso.
           Las porciones de los ingredientes deben estar medidas UNICAMENTE en "gramos", "mililitros" o "unidades", convertir las demás a la que sea más conveniente. NO USAR ABREVIACIONES
           Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (1,2,3,etc)}.
         `;
@@ -295,8 +300,8 @@ class GeminiController{
         const responseText = await result.response;
         const rawText = await responseText.text();
   
-        const finalJason = await parseadorJson(rawText);
-        await asignarImagen(finalJason);
+        const finalJson = await parseadorJson(rawText);
+        await asignarImagen(finalJson);
   
         console.log("--response");
         console.log("Final JSON:", finalJson);

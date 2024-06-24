@@ -2,6 +2,7 @@ import axios from 'axios';
 import admin from "firebase-admin";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: 'json' };
+import config from "../config/config.js";
 
 // Inicializar Firebase
 admin.initializeApp({
@@ -12,8 +13,8 @@ admin.initializeApp({
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
 
-const apikey = "AIzaSyAS84CqIgescRVP2lv-G1X8k9TwiKJ7Jwo";
-const cx = "92403c1691e7c486c";
+const apikey = config.googleAPI;
+const cx = config.buscador;
 
 //const model = await createModel();
 const genAI = new GoogleGenerativeAI("AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw");
