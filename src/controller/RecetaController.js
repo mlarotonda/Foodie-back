@@ -9,7 +9,7 @@ class RecetaController{
   generarRecetas = async (req, res) => {
     try {
       const recetas = await GeminiController.getUserRecipes(req, res);
-      return res.status(200).json(recetas);
+      return recetas
     } catch (error) {
       return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
     }
@@ -28,7 +28,7 @@ class RecetaController{
   generarRecetasRandom = async (req, res) => {
     try {
       const recetas = await GeminiController.getRandomRecipes(req, res);
-      return res.status(200).json(recetas);
+      return recetas;
     } catch (error) {
       return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
     }

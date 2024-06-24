@@ -1,55 +1,62 @@
 import { db } from "../connection/firebaseConnection.js";
-import axios from 'axios';
-import createModel from "../connection/geminiConnection.js"
+import axios from "axios";
+import createModel from "../connection/geminiConnection.js";
 
 class GeminiController{
 
-    generarTipoDeProducto = async (nombresProductos) => {
+  generarTipoDeProducto = async (nombresProductos) => {
+    const model = await createModel();
 
-      const model = await createModel();
+    const productosSnapshot = await db.collection("productos").get();
+    const tiposDeProductos = productosSnapshot.docs
+      .map((doc) => doc.id)
+      .join(", ");
 
-      const productosSnapshot = await db.collection("productos").get();
-      const tiposDeProductos = productosSnapshot.docs.map(doc => doc.id).join(', ');
+    const prompt = `Tengo los siguientes productos: ${nombresProductos.join(
+      ", "
+    )}. En base a sus nombres, a qué tipo de producto pertenecen? Elegir un ÚNICO tipo de producto. Las opciones son: ${tiposDeProductos}. IMPORTANTE: Responde SOLO con el tipo de producto correspondiente`;
 
-      const prompt = `Tengo los siguientes productos: ${nombresProductos.join(', ')}. En base a sus nombres, a qué tipo de producto pertenecen? Elegir un ÚNICO tipo de producto. Las opciones son: ${tiposDeProductos}. IMPORTANTE: Responde SOLO con el tipo de producto correspondiente`;
-      
-      try {
-        const result = await model.generateContent(prompt);
-        const responseText = await result.response;
-        const text = await responseText.text();
-        const tipoDeProducto = text.trim();
-        console.log(`Tipo de producto generado: ${tipoDeProducto}`);
+    try {
+      const result = await model.generateContent(prompt);
+      const responseText = await result.response;
+      const text = await responseText.text();
+      const tipoDeProducto = text.trim();
+      console.log(`Tipo de producto generado: ${tipoDeProducto}`);
 
-        if (!tipoDeProducto || tipoDeProducto.trim() === "") {
-          return null;
-          } else {
-              const productoDoc = await db.collection("productos").doc(cleanedText.replace('.', '')).get();
-              console.log(productoDoc)
-              if (productoDoc.exists) {
-                  const productoData = productoDoc.data();
-                  return {
-                      tipo: cleanedText,
-                      unidad: productoData.unidadMedida,
-                      imageUrl: productoData.imageUrl
-                  };
-              } else {
-                  return {
-                      tipo: cleanedText,
-                      unidad: null,
-                      imageUrl: null
-                  };
-              }
-          }
-
-      } catch (error) {
-        throw new Error(`Error al generar contenido con el modelo: ${error.message}`);
+      if (!tipoDeProducto || tipoDeProducto.trim() === "") {
+        return null;
+      } else {
+        const productoDoc = await db
+          .collection("productos")
+          .doc(cleanedText.replace(".", ""))
+          .get();
+        console.log(productoDoc);
+        if (productoDoc.exists) {
+          const productoData = productoDoc.data();
+          return {
+            tipo: cleanedText,
+            unidad: productoData.unidadMedida,
+            imageUrl: productoData.imageUrl,
+          };
+        } else {
+          return {
+            tipo: cleanedText,
+            unidad: null,
+            imageUrl: null,
+          };
+        }
       }
+    } catch (error) {
+      throw new Error(
+        `Error al generar contenido con el modelo: ${error.message}`
+      );
     }
+  };
 
-    getUserRecipes = async (req, res) => {
-      console.log("------request");
-  
-      const model = await createModel();
+  getUserRecipes = async (req, res) => {
+    console.log("------request");
+
+    const model = await createModel();
 
       const userId = req.user.id;
       const comida = req.body
@@ -188,33 +195,38 @@ class GeminiController{
       }
     };
 
-    getRandomRecipes = async (req, res) => {
-      console.log("------request");
-  
-      const model = await createModel();
+  getRandomRecipes = async (req, res) => {
+    console.log("------request");
 
-      const userId = req.user.id;
-  
-      try {
-        const userDoc = await db.collection('usuarios').doc(userId).get();
-        if (!userDoc.exists) {
-          throw new Error('Usuario no encontrado');
-        }
-  
-        const userData = userDoc.data();
-        console.log("Datos del usuario:", userData);
-  
-        const restrictions = userData.persona.restricciones || [];
-        console.log("Restricciones del usuario:", restrictions);
-  
-        const productosSnapshot = await db.collection('productos').get();
-        const productos = productosSnapshot.docs.map(doc => ({ nombre: doc.id, unidadMedida: doc.data().unidadMedida }));
-        console.log("Productos en la colección de Firestore:", productos);
-  
-        const restriccionesPrompt = restrictions.join(", ")
-        const productosPrompt = productos.map(p => `${p.nombre} medido en ${p.unidadMedida}`).join(', ');     
+    const model = await createModel();
 
-        let prompt = `
+    const userId = req.user.id;
+
+    try {
+      const userDoc = await db.collection("usuarios").doc(userId).get();
+      if (!userDoc.exists) {
+        throw new Error("Usuario no encontrado");
+      }
+
+      const userData = userDoc.data();
+      console.log("Datos del usuario:", userData);
+
+      const restrictions = userData.persona.restricciones || [];
+      console.log("Restricciones del usuario:", restrictions);
+
+      const productosSnapshot = await db.collection("productos").get();
+      const productos = productosSnapshot.docs.map((doc) => ({
+        nombre: doc.id,
+        unidadMedida: doc.data().unidadMedida,
+      }));
+      console.log("Productos en la colección de Firestore:", productos);
+
+      const restriccionesPrompt = restrictions.join(", ");
+      const productosPrompt = productos
+        .map((p) => `${p.nombre} medido en ${p.unidadMedida}`)
+        .join(", ");
+
+      let prompt = `
           Dar 3 recetas de almuerzo/cena.
           Adapta los ingredientes de las recetas para que coincidan exactamente con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
           Las recetas deben estar pensadas para una sola persona, y las porciones pueden ser ajustadas para coincidir con eso.
