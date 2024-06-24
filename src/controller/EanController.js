@@ -21,7 +21,7 @@ class EanController {
         const eanDoc = await eanRef.get();
 
         if (eanDoc.exists) {
-            tipoProducto = eanDoc.data().tipo;
+            tipoProducto = eanDoc.data();
             console.log(`Producto encontrado: ${ean} con tipo: ${tipoProducto}`);
         } else {
             console.log("EAN no encontrado, llamando a la API de Ratoneando.");
