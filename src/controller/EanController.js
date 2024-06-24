@@ -1,6 +1,6 @@
 import { db } from "../connection/firebaseConnection.js";
 import RatoneandoController from './RatoneandoController.js';
-import GeminiController2 from './GeminiController2.js';
+import GeminiController from './GeminiController.js';
 
 class EanController {
   // Método para obtener el tipo de producto por EAN
@@ -27,7 +27,7 @@ class EanController {
             console.log("EAN no encontrado, llamando a la API de Ratoneando.");
 
             const nombresProductos = await RatoneandoController.buscarProductoEnAPI(ean);
-            tipoProducto = await GeminiController2.generarTipoDeProducto(nombresProductos);
+            tipoProducto = await GeminiController.generarTipoDeProducto(nombresProductos);
             console.log(tipoProducto)
             if (!tipoProducto) {
                 throw new Error("El tipo de producto no es válido.");
