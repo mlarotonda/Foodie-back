@@ -4,33 +4,6 @@ import GeminiController from './GeminiController.js';
 import RatoneandoController from "./RatoneandoController.js";
 import StockController from "./StockController.js"
 
-// Validación de la receta
-const validarReceta = (receta) => {
-  if (typeof receta.titulo !== 'string' || receta.titulo.trim() === '') {
-    throw new Error("El título es obligatorio y debe ser una cadena no vacía.");
-  }
-  if (typeof receta.instrucciones !== 'string' || receta.instrucciones.trim() === '') {
-    throw new Error("Las instrucciones son obligatorias y deben ser una cadena no vacía.");
-  }
-  if (!Array.isArray(receta.ingredientes) || receta.ingredientes.length === 0) {
-    throw new Error("Debe haber al menos un ingrediente.");
-  }
-  receta.ingredientes.forEach(ingrediente => {
-    if (typeof ingrediente.ingrediente !== 'string' || ingrediente.ingrediente.trim() === '') {
-      throw new Error("El ingrediente es obligatorio y debe ser una cadena no vacía.");
-    }
-    if (typeof ingrediente.cantidad !== 'number' || ingrediente.cantidad <= 0) {
-      throw new Error("La cantidad del ingrediente debe ser un número positivo.");
-    }
-  });
-};
-
-const validarPuntuacion = (puntuacion) =>{
-  if (puntuacion !== undefined && (typeof puntuacion !== 'number' || puntuacion < 1 || puntuacion > 5)) {
-    throw new Error("La puntuacion debe ser un número entre 1 y 5.");
-  }
-}
-
 class RecetaController{
 
   generarRecetas = async (req, res) => {
@@ -42,9 +15,28 @@ class RecetaController{
     }
   };
 
+  generarRecetasGrupal = async (req, res) => {
+    try {
+      const recetas = await GeminiController.getUserGuestsRecipes(req, res);
+      return res.status(200).json(recetas);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
+    }
+  };
+
+
   generarRecetasRandom = async (req, res) => {
     try {
       const recetas = await GeminiController.getRandomRecipes(req, res);
+      return res.status(200).json(recetas);
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
+    }
+  };
+
+  generarRecetasRandomGrupal = async (req, res) => {
+    try {
+      const recetas = await GeminiController.getRandomGuestsRecipes(req, res);
       return res.status(200).json(recetas);
     } catch (error) {
       return res.status(500).json({ success: false, message: 'Error al generar recetas: ' + error.message });
@@ -72,23 +64,26 @@ class RecetaController{
   }
 
   // Crear una nueva receta
-  crearReceta = async (receta) => {
+  crearRecetaPersonalizada = async (req, res) => {
+    const userId = req.user.id;
+    const receta = req.body
+
     try {
-      // Obtener todas las recetas
-      const recetasSnapshot = await getDocs(collection(db, "recetas"));
-      const recetas = recetasSnapshot.docs.map(doc => (doc.data()));
+      await validarReceta(receta)
 
-      // Generar nuevo recetaId
-      let newId = recetas.length + 1;
-      
-      // Validar que el nuevo recetaId no esté en uso
-      while (recetas.some(r => r.recetaId === newId)) {
-        newId++;
-      }
-      
-      receta.recetaId = newId;
+      // Generar el ID de la receta usando el nombre y la fecha actual
+      const now = new Date();
+      const fechaActual = now.toISOString().split('T')[0];// Obtener la fecha en formato yyyy-MM-dd
+      const recetaId = `${recetaTemporal.name}_${fechaActual}`;
 
-      validarReceta(receta);
+      const recetaPersonalizada = {
+        ...receta,
+         momentoCreacion:new Date().toISOString()
+        };
+
+      const recetarioRef = db.collection('usuarios').doc(String(userId)).collection('recetario'); //REVISAR
+      await recetarioRef.doc(recetaId).set(recetaPersonalizada);
+      
       
       const docRef = await addDoc(collection(db, "recetas"), receta);
       console.log("Documento escrito con ID: ", docRef.id);
@@ -110,14 +105,34 @@ class RecetaController{
     }
   };
 
-  // Obtener todas las recetas
-  obtenerRecetas = async () => {
-    const querySnapshot = await getDocs(collection(db, "recetas"));
-    const recetas = [];
-    querySnapshot.forEach((doc) => {
-      recetas.push({ id: doc.id, ...doc.data() });
-    });
-    return recetas;
+  obtenerFavoritas = async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const favsRef = db.collection('usuarios').doc(String(userId)).collection('favoritas');
+        const querySnapshot = await favsRef.get();
+        const recetasFavs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        res.status(200).json({ success: true, recetas: recetasFavs });
+    } catch (error) {
+        console.error('Error al obtener el historial:', error.message);
+        res.status(500).json({ success: false, message: 'Error al obtener el historial: ' + error.message });
+    }
+  };
+
+  obtenerHistorial = async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const historialRef = db.collection('usuarios').doc(String(userId)).collection('historial');
+        const querySnapshot = await historialRef.get();
+        const recetasHistorial = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        res.status(200).json({ success: true, recetas: recetasHistorial });
+    } catch (error) {
+        console.error('Error al obtener el historial:', error.message);
+        res.status(500).json({ success: false, message: 'Error al obtener el historial: ' + error.message });
+    }
   };
 
   // Actualizar una receta
@@ -140,6 +155,22 @@ class RecetaController{
       console.log("Documento eliminado con éxito");
     } catch (e) {
       console.error("Error al eliminar el documento: ", e);
+    }
+  };
+
+  eliminarRecetaTemporal = async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const userRef = db.collection('usuarios').doc(String(userId));
+        const userDoc = await userRef.get();
+        
+        await userDoc.update({recetaTemporal: null});
+
+        res.status(200).json({ success: true, message: 'Receta Temporal eliminada exitosamente'});
+    } catch (error) {
+        console.error('Error al aliminar la receta:', error.message);
+        res.status(500).json({ success: false, message: 'Error al aliminar la receta: ' + error.message });
     }
   };
 
@@ -177,7 +208,7 @@ class RecetaController{
 
   puntuarReceta = async (req, res) => {
     const userId = req.user.id;
-    const { puntuacion } = req.body;
+    const { puntuacion, favorita } = req.body;
   
     try {
       await validarPuntuacion(puntuacion);
@@ -204,7 +235,9 @@ class RecetaController{
       // Crear una nueva receta con la puntuación y guardar en la colección recetas del usuario
       const recetaPuntuada = {
         ...recetaTemporal,
-        puntuacion
+        puntuacion,
+        favorita,
+        momentoRealizacion:new Date().toISOString()
       };
   
       // Generar el ID de la receta usando el nombre y la fecha actual
@@ -231,3 +264,30 @@ class RecetaController{
 }
 
 export default new RecetaController();
+
+// Validación de la receta
+const validarReceta = (receta) => {
+  if (typeof receta.titulo !== 'string' || receta.titulo.trim() === '') {
+    throw new Error("El título es obligatorio y debe ser una cadena no vacía.");
+  }
+  if (typeof receta.instrucciones !== 'string' || receta.instrucciones.trim() === '') {
+    throw new Error("Las instrucciones son obligatorias y deben ser una cadena no vacía.");
+  }
+  if (!Array.isArray(receta.ingredientes) || receta.ingredientes.length === 0) {
+    throw new Error("Debe haber al menos un ingrediente.");
+  }
+  receta.ingredientes.forEach(ingrediente => {
+    if (typeof ingrediente.ingrediente !== 'string' || ingrediente.ingrediente.trim() === '') {
+      throw new Error("El ingrediente es obligatorio y debe ser una cadena no vacía.");
+    }
+    if (typeof ingrediente.cantidad !== 'number' || ingrediente.cantidad <= 0) {
+      throw new Error("La cantidad del ingrediente debe ser un número positivo.");
+    }
+  });
+};
+
+const validarPuntuacion = (puntuacion) =>{
+  if (puntuacion !== undefined && (typeof puntuacion !== 'number' || puntuacion < 1 || puntuacion > 5)) {
+    throw new Error("La puntuacion debe ser un número entre 1 y 5.");
+  }
+}
