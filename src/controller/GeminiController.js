@@ -201,6 +201,7 @@ class GeminiController{
     const model = await createModel();
 
     const userId = req.user.id;
+    const comida = req.body;
 
     try {
       const userDoc = await db.collection("usuarios").doc(userId).get();
@@ -227,7 +228,7 @@ class GeminiController{
         .join(", ");
 
       let prompt = `
-          Dar 3 recetas de almuerzo/cena.
+          Dar 3 recetas de ${comida}
           Adapta los ingredientes de las recetas para que coincidan exactamente con los siguientes nombres y sus respectivas unidades de medida: ${productosPrompt}. No los modifiques en lo mas minimo en ningun momento.
           Las recetas deben estar pensadas para una sola persona, y las porciones pueden ser ajustadas para coincidir con eso.
           Las porciones de los ingredientes deben estar medidas UNICAMENTE en "gramos", "mililitros" o "unidades", convertir las demás a la que sea más conveniente. NO USAR ABREVIACIONES
