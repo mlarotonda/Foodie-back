@@ -2,6 +2,7 @@ import puppeteer from 'puppeteer';
 import admin from 'firebase-admin';
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: "json" };
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import config from "../config/config.js";
 
 // Inicializar Firebase
 admin.initializeApp({
@@ -11,7 +12,7 @@ admin.initializeApp({
 const db = admin.firestore();
 
 //const model = await createModel();
-const genAI = new GoogleGenerativeAI("AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw");
+const genAI = new GoogleGenerativeAI(config.generativeAIKey);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 async function determinarUnidad(item) {
@@ -146,6 +147,8 @@ const urls = [
   'https://www.carrefour.com.ar/Carnes-y-Pescados',
   'https://www.carrefour.com.ar/Frutas-y-Verduras',
   'https://www.carrefour.com.ar/Bebidas',
+  'https://www.carrefour.com.ar/Panaderia',
+  'https://www.carrefour.com.ar/Congelados',
 ];
 
 (async () => {

@@ -61,8 +61,6 @@ class RatoneandoController {
         }
       }
   };
-  
-
 }
 
 export default new RatoneandoController();

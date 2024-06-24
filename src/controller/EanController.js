@@ -32,15 +32,6 @@ class EanController {
             if (!tipoProducto) {
                 throw new Error("El tipo de producto no es válido.");
             }
-
-            /*
-            await eanRef.set({
-                tipo: tipoProducto,
-                timestamp: new Date().toISOString()
-            });
-
-            console.log(`Producto con EAN: ${ean} insertado en Firestore con tipo: ${tipoProducto}`);
-            */
         }
 
         res.json( tipoProducto );

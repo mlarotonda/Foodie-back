@@ -1,21 +1,5 @@
 import { db } from "../connection/firebaseConnection.js";
 
-const validarProducto = (producto) => {
-  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
-    throw new Error(
-      "La cantidad del producto debe ser un número entero positivo."
-    );
-  }
-};
-
-const validarProductoParaConsumo = (producto) => {
-  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
-    throw new Error(
-      "La cantidad del producto debe ser un número entero positivo."
-    );
-  }
-};
-
 class StockController {
   // Método para confirmar el producto por parte del usuario
   async confirmacionUsuario(req, res) {
@@ -98,8 +82,6 @@ class StockController {
     try {
       validarProducto({ cantidad });
 
-      const ultimaCarga = new Date().toISOString();
-
       const productoRef = db
         .collection("usuarios")
         .doc(String(userId))
@@ -111,7 +93,7 @@ class StockController {
       if (docSnap.exists) {
         await productoRef.update({
           cantidad: productoExistente.cantidad + cantidad,
-          ultimaCarga,
+          ultimaCarga: new Date().toISOString(),
         });
       } else {
         const ingredienteSnapshot = await db
@@ -280,9 +262,7 @@ class StockController {
           .doc(nombreProducto)
           .get();
         if (!productoDoc.exists) {
-          return res.status(404).json({
-            error: `Producto ${nombreProducto} no encontrado en la colección de productos.`,
-          });
+          return res.status(404).json({error: `Producto ${nombreProducto} no encontrado en la colección de productos.`});
         }
 
         // Buscar el producto en el stock del usuario
@@ -352,3 +332,19 @@ class StockController {
 }
 
 export default new StockController();
+
+const validarProducto = (producto) => {
+  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
+    throw new Error(
+      "La cantidad del producto debe ser un número entero positivo."
+    );
+  }
+};
+
+const validarProductoParaConsumo = (producto) => {
+  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
+    throw new Error(
+      "La cantidad del producto debe ser un número entero positivo."
+    );
+  }
+};
