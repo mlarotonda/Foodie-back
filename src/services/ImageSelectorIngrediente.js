@@ -17,7 +17,7 @@ const apikey = config.googleAPI;
 const cx = config.buscador;
 
 //const model = await createModel();
-const genAI = new GoogleGenerativeAI("AIzaSyC1Jxmxbl2jL_3jelQ0IRZl4kUaIx5LQbw");
+const genAI = new GoogleGenerativeAI(config.generativeAIKey);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const defaultImageUrl = "https://www.svgrepo.com/show/146075/question.svg";

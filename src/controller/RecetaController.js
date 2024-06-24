@@ -10,16 +10,8 @@ class RecetaController{
     return generateRecipes(req, res, GeminiController.getUserRecipes);
   };
 
-  generarRecetasGrupal = (req, res) => {
-    return generateRecipes(req, res, GeminiController.getUserGuestsRecipes);
-  };
-
   generarRecetasRandom = (req, res) => {
     return generateRecipes(req, res, GeminiController.getRandomRecipes);
-  };
-
-  generarRecetasRandomGrupal = (req, res) => {
-    return generateRecipes(req, res, GeminiController.getRandomGuestsRecipes);
   };
 
   guardarRecetaTemporal = async (req, res) => {
@@ -57,6 +49,24 @@ class RecetaController{
         res.status(500).json({ success: false, message: 'Error al aliminar la receta: ' + error.message });
     }
   };
+
+  obtenerRecetaTemporal = async (req, res) =>{
+    const userId = req.user.id;
+
+    try {
+      const userDocRef = await db.collection('usuarios').doc(String(userId));
+      const userDoc = await userDocRef.get();
+
+      const recetaTemporal = userDoc.recetaTemporal;
+  
+      console.log('Receta temporal: ${recetaTemporal}')
+      res.status(200).json({ success: true, recetaTemporal: recetaTemporal });
+    } catch (error) {
+      console.error('Error al obtener la receta temporal:', error.message);
+      res.status(500).json({ success: false, message: 'Error al obtener la receta temporal: ' + error.message });
+    }
+
+  }
 
   // Crear una nueva receta
   crearRecetaPersonalizada = async (req, res) => {
@@ -99,38 +109,6 @@ class RecetaController{
   obtenerHistorial = async (req, res) => {
     const userId = req.user.id;
     await obtenerRecetas(userId, 'historial', res);
-  };
-
-  calcularPrecio = async (req, res) => {
-    const { receta } = req.body; // La receta seleccionada desde el front
-
-    try {
-      let precioTotal = 0;
-
-      for (const ingrediente of receta.ingredients) {
-        try {
-          const descripcion = await ingrediente.description.toLowerCase();
-          const precioIngrediente = await RatoneandoController.obtenerPrecioIngrediente(descripcion);
-          if (precioIngrediente) {
-
-            let precioAprox = precioIngrediente; //si se mide en unidades se suma como viene
-
-            if(ingrediente.unit!=='unidades'){
-              //Se asume precio por kilo/litro y se multiplica por g/ml usados en el plato.
-              precioAprox = (precioIngrediente / 1000) * ingrediente.quantity;
-            }
-
-            precioTotal += precioAprox;
-          }
-        } catch (error) {
-          console.error(`Error al obtener el precio del ingrediente ${ingrediente.description}: ${error.message}`);        
-        }
-      }
-
-      res.status(200).json({ precioEstimado: precioTotal });
-    } catch (error) {
-      res.status(500).json({ success: false, message: 'Error al calcular el precio: ' + error.message });
-    }
   };
 
   puntuarReceta = async (req, res) => {
