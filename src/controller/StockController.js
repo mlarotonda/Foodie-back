@@ -5,17 +5,18 @@ class StockController {
   async confirmacionUsuario(req, res) {
 
     const userId = req.user.id;
-    const { ean, tipoProducto, cantidad, unidad } = req.body;
+    const { ean, tipoProducto, cantidad, unidad, alerta } = req.body;
 
-    if (!userId || !ean || !tipoProducto || !cantidad || !unidad) {
+    if (!userId || !ean || !tipoProducto || !cantidad || !unidad || !alerta) {
       console.log("Datos incompletos en la solicitud");
       return res.status(400).json({ error: "Todos los campos son requeridos" });
     }
 
     try {
-      console.log(
-        `Confirmando EAN: ${ean} con tipo: ${tipoProducto}, cantidad: ${cantidad}, unidad: ${unidad} para el usuario: ${userId}`
-      );
+      await validarValor(unidad);
+      await validarValor(cantidad);
+
+      console.log(`Confirmando EAN: ${ean} con tipo: ${tipoProducto}, cantidad: ${cantidad}, unidad: ${unidad} para el usuario: ${userId}`);
 
       const eanRef = db.collection("eans").doc(String(ean));
       const eanDoc = await eanRef.get();
@@ -42,6 +43,7 @@ class StockController {
         await userStockRef.update({
           cantidad: currentCantidad + cantidad * unidad,
           ultimaCarga: new Date().toISOString(),
+          alertaEscasez: alerta,
         });
         console.log(
           `Stock actualizado para el producto: ${tipoProducto} del usuario: ${userId} con nueva cantidad: ${
@@ -57,14 +59,11 @@ class StockController {
           cantidad: cantidad * unidad,
           ultimaCarga: new Date().toISOString(),
           unidadMedida,
+          alertaEscasez: alerta,
         });
 
-        console.log(
-          `Nuevo stock creado para el producto: ${tipoProducto} del usuario: ${userId} con: ${
-            cantidad * unidad
-          }  ${unidadMedida}`
-        );
-      }
+        console.log(`Nuevo stock creado para el producto: ${tipoProducto} del usuario: ${userId} con: ${cantidad * unidad}  ${unidadMedida}`);
+        }
 
       res.status(200).json({ message: "Confirmación exitosa" });
     } catch (e) {
@@ -77,10 +76,13 @@ class StockController {
 
   async agregarProductoPorNombre(req, res) {
     const userId = req.userId;
-    const { cantidad, nombreProducto } = req.body;
+    const { cantidad, nombreProducto, unidad, alerta } = req.body;
 
     try {
-      validarProducto({ cantidad });
+      await validarValor(unidad);
+      await validarValor(cantidad);
+
+      const cantAgregada = cantidad*unidad;
 
       const productoRef = db
         .collection("usuarios")
@@ -92,17 +94,21 @@ class StockController {
 
       if (docSnap.exists) {
         await productoRef.update({
-          cantidad: productoExistente.cantidad + cantidad,
+          cantidad: docSnap.cantidad + cantAgregada,
           ultimaCarga: new Date().toISOString(),
+          alertaEscasez: alerta,
         });
       } else {
-        const ingredienteSnapshot = await db
-          .collection("productos")
-          .doc(nombreProducto);
+        const ingredienteSnapshot = await db.collection("productos").doc(nombreProducto);
         const ingredienteRef = await ingredienteSnapshot.get();
         const unidad = ingredienteRef.data().unidadMedida;
 
-        await productoRef.set({ cantidad, unidad, ultimaCarga });
+        await productoRef.set({ 
+          cantidad: cantAgregada,
+          unidad,
+          ultimaCarga,
+          alertaEscasez: alerta,
+        });
       }
 
       console.log(
@@ -196,7 +202,7 @@ class StockController {
     const { nombreProducto, unidad, cantidad } = req.body;
 
     try {
-      validarProducto({ unidad, cantidad });
+      validarValores({ unidad, cantidad });
 
       const productoRef = db
         .collection("usuarios")
@@ -333,8 +339,8 @@ class StockController {
 
 export default new StockController();
 
-const validarProducto = (producto) => {
-  if (!Number.isInteger(producto.cantidad) || producto.cantidad <= 0) {
+const validarValor = (variable) => {
+  if (!Number.isInteger(variable) || variable <= 0) {
     throw new Error(
       "La cantidad del producto debe ser un número entero positivo."
     );
