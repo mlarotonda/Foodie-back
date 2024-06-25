@@ -79,7 +79,6 @@ class GeminiController {
         cantidad: doc.data().cantidad,
         unidadMedida: doc.data().unidadMedida,
       }));
-      console.log("Productos en el stock del usuario:", stockItems);
 
       const userRestrictions = userData.persona.restricciones || [];
       let allRestrictions = [...new Set(userRestrictions)];
@@ -88,16 +87,24 @@ class GeminiController {
 
       if (comensales !== null) {
         for (let persona of comensales) {
-          const personaDoc = await db
-            .collection("personas")
-            .doc(persona.id)
+          const grupoFamiliarSnapshot = await db
+            .collection("usuarios")
+            .doc(userId)
+            .collection("grupoFamiliar")
+            .where("nombre", "==", persona.nombre)
+            .where("apellido", "==", persona.apellido)
             .get();
+
+          const personaDoc = grupoFamiliarSnapshot.docs[0];
+
           if (personaDoc.exists) {
             const personaData = personaDoc.data();
             const personaRestrictions = personaData.restricciones || [];
-            allRestrictions = [
-              ...new Set([...allRestrictions, ...personaRestrictions]),
-            ];
+            if (personaRestrictions.length > 0) {
+              allRestrictions = [
+                ...new Set([...allRestrictions, ...personaRestrictions]),
+              ];
+            }
           }
         }
         console.log("Restricciones combinadas:", allRestrictions);
@@ -158,12 +165,10 @@ class GeminiController {
       return res.status(200).send(finalJson);
     } catch (error) {
       console.error("Error fetching data from external API:", error);
-      return res
-        .status(500)
-        .send({
-          success: false,
-          message: "Error al obtener datos de la API externa: " + error.message,
-        });
+      return res.status(500).send({
+        success: false,
+        message: "Error al obtener datos de la API externa: " + error.message,
+      });
     }
   };
 
@@ -191,16 +196,24 @@ class GeminiController {
 
       if (comensales !== null) {
         for (let persona of comensales) {
-          const personaDoc = await db
-            .collection("personas")
-            .doc(persona.id)
+          const grupoFamiliarSnapshot = await db
+            .collection("usuarios")
+            .doc(userId)
+            .collection("grupoFamiliar")
+            .where("nombre", "==", persona.nombre)
+            .where("apellido", "==", persona.apellido)
             .get();
+
+          const personaDoc = grupoFamiliarSnapshot.docs[0];
+
           if (personaDoc.exists) {
             const personaData = personaDoc.data();
             const personaRestrictions = personaData.restricciones || [];
-            allRestrictions = [
-              ...new Set([...allRestrictions, ...personaRestrictions]),
-            ];
+            if (personaRestrictions.length > 0) {
+              allRestrictions = [
+                ...new Set([...allRestrictions, ...personaRestrictions]),
+              ];
+            }
           }
         }
         console.log("Restricciones combinadas:", allRestrictions);
@@ -257,12 +270,10 @@ class GeminiController {
       return res.status(200).send(finalJson);
     } catch (error) {
       console.error("Error fetching data from external API:", error);
-      return res
-        .status(500)
-        .send({
-          success: false,
-          message: "Error al obtener datos de la API externa: " + error.message,
-        });
+      return res.status(500).send({
+        success: false,
+        message: "Error al obtener datos de la API externa: " + error.message,
+      });
     }
   };
 }
