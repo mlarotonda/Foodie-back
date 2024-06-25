@@ -218,5 +218,20 @@ const obtenerRecetas = async (userId, coleccion, res) => {
 };
 
 const generateRecipes = async (req, res, method) => {
-  await method(req, res);
-}
+  try {
+    await method(req, res);
+  } catch (error) {
+    console.error('Error en la primera llamada:', error.message);
+    if (error.response && error.response.status === 500) {
+      console.log('Reintentando la llamada...');
+      try {
+        await method(req, res);
+      } catch (retryError) {
+        console.error('Error en la segunda llamada:', retryError.message);
+        return res.status(500).send({ success: false, message: 'Error al obtener datos de la API externa: ' + retryError.message });
+      }
+    } else {
+      return res.status(500).send({ success: false, message: 'Error al obtener datos de la API externa: ' + error.message });
+    }
+  }
+};
