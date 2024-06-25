@@ -5,7 +5,7 @@ import authMiddleware from "../middleware/auth.js";
 const router = Router();
 
 //Recetas con stock
-router.get("/user", authMiddleware, RecetaController.generarRecetas);
+router.post("/user", authMiddleware, RecetaController.generarRecetas);
 
 //Recetas random
 router.get("/random", authMiddleware, RecetaController.generarRecetasRandom);
