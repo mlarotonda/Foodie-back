@@ -26,7 +26,6 @@ class ComensalController {
         .collection("usuarios")
         .doc(userId)
         .collection("grupoFamiliar")
-        .collection("grupoFamiliar")
         .doc(persona.id);
 
       await comensalesRef.set({...persona, creacion: new Date().toISOString()});
