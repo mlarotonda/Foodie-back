@@ -15,13 +15,13 @@ class RecetaController {
 
   guardarRecetaTemporal = async (req, res) => {
     const userId = req.user.id;
-    const { receta, usaStock } = req.body;
+    const { receta} = req.body;
 
     try {
       const userDocRef = await db.collection("usuarios").doc(String(userId));
 
       await userDocRef.update({
-        recetaTemporal: { ...receta, usaStock },
+        recetaTemporal: {receta},
       });
 
       console.log("Receta temporal guardada exitosamente");
@@ -119,6 +119,7 @@ class RecetaController {
     const recetaPersonalizada = {
       ...receta,
       momentoCreacion: new Date().toISOString(),
+      usaStock: false,
     };
 
     const recetarioRef = db

@@ -85,7 +85,6 @@ class ComensalController {
         .collection("usuarios")
         .doc(userId)
         .collection("grupoFamiliar")
-        .collection("grupoFamiliar")
         .doc(personaId);
 
       await comensalRef.update({...persona, timestamp: new Date().toISOString(),});
