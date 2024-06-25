@@ -167,7 +167,7 @@ class RecetaController {
       // Si usaStock es true, consumir productos del stock
       if (recetaTemporal.usaStock) {
         console.log("Receta usa stock. Consumiendo ingredientes");
-        await StockController.consumirProductos(recetaTemporal);
+          await StockController.consumirProductos({ ...recetaTemporal, userId });
       }
 
       // Crear una nueva receta con la puntuación y guardar en la colección recetas del usuario

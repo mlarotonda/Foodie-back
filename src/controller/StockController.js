@@ -251,25 +251,16 @@ class StockController {
     }
   }
 
-  async consumirProductos(req, res) {
-    const userId = req.user.id;
-    const { receta } = req.body;
+  async consumirProductos(receta) {
+    const userId = receta.userId;
+    let productosNoConsumidos = [];
 
     try {
       for (const ingrediente of receta.ingredients) {
-        const { description: nombreProducto, quantity: cantidad } = ingrediente;
+        const { description: nombreProducto, quantity: cantidad, unit: unidad } = ingrediente;
 
         // Validar la cantidad
         validarProductoParaConsumo({ cantidad });
-
-        // Verificar que el nombre del producto coincida con un documento en la colección productos
-        const productoDoc = await db
-          .collection("productos")
-          .doc(nombreProducto)
-          .get();
-        if (!productoDoc.exists) {
-          return res.status(404).json({error: `Producto ${nombreProducto} no encontrado en la colección de productos.`});
-        }
 
         // Buscar el producto en el stock del usuario
         const productoRef = db
@@ -281,21 +272,30 @@ class StockController {
         const docSnap = await productoRef.get();
 
         if (!docSnap.exists) {
-          return res.status(404).json({
-            error: `Producto ${nombreProducto} no encontrado en el stock del usuario.`,
-          });
+          console.log(`${nombreProducto} no se encuentra en el stock`)
+          productosNoConsumidos.push({ nombre: nombreProducto, cantidad, unidadMedida: unidad });
+        continue;
         }
 
         const productoExistente = docSnap.data();
 
         // Verificar si la cantidad solicitada es menor o igual a la cantidad en stock
         if (cantidad > productoExistente.cantidad) {
-          return res.status(400).json({
-            error: `Cantidad solicitada de ${nombreProducto} (${cantidad}) es mayor que la cantidad en stock (${productoExistente.cantidad}).`,
-          });
+          return res.status(400).json({error: `Cantidad solicitada de ${nombreProducto} (${cantidad}) es mayor que la cantidad en stock (${productoExistente.cantidad}).`,});
+        }
+
+        // Verificar que el nombre del producto coincida con un documento en la colección productos
+        const productoDoc = await db
+          .collection("productos")
+          .doc(nombreProducto)
+          .get();
+
+        if (!productoDoc.exists) {
+          console.log(`${nombreProducto} no se encuentra en la coleccion de productos`)
+          productosNoConsumidos.push({ nombre: nombreProducto, cantidad, unidadMedida: unidad });
+        continue;
         }
       }
-
       // Si todas las validaciones pasan, realizar la resta de los productos
       for (const ingrediente of receta.ingredients) {
         const { description: nombreProducto, quantity: cantidad } = ingrediente;
@@ -312,30 +312,27 @@ class StockController {
 
         if (nuevaCantidad <= 0) {
           await productoRef.delete();
-          console.log(
-            `Producto ${nombreProducto} eliminado del stock del usuario ${userId}.`
-          );
+          console.log(`Producto ${nombreProducto} agotado. Eliminado del stock del usuario ${userId}.`);
         } else {
           await productoRef.update({
             cantidad: nuevaCantidad,
             ultimoConsumo: new Date().toISOString(),
           });
-          console.log(
-            `Producto ${nombreProducto} actualizado en el stock del usuario ${userId}.`
-          );
+          console.log(`Producto ${nombreProducto} consumido correctamente. Actualizado en el stock del usuario ${userId}.`);
         }
       }
 
+      if (productosNoConsumidos.length > 0) {
+        console.log('Productos no consumidos:', productosNoConsumidos);
+      }
+
       console.log(`Productos consumidos del stock del usuario ${userId}.`);
-      res.status(200).json({
-        message: `Productos consumidos del stock del usuario ${userId}.`,
-      });
     } catch (e) {
       console.error("Error al consumir productos del stock: ", e.message);
-      res.status(400).json({ error: e.message });
+      throw new Error(e.message);
     }
   }
-}
+};
 
 export default new StockController();
 
