@@ -45,17 +45,24 @@ class RecetaController {
       const userRef = db.collection("usuarios").doc(String(userId));
       const userDoc = await userRef.get();
 
-      await userDoc.update({ recetaTemporal: null });
+      if (!userDoc.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Usuario no encontrado",
+        });
+      }
+
+      await userRef.update({ recetaTemporal: null });
 
       res.status(200).json({
         success: true,
         message: "Receta Temporal eliminada exitosamente",
       });
     } catch (error) {
-      console.error("Error al aliminar la receta:", error.message);
+      console.error("Error al eliminar la receta:", error.message);
       res.status(500).json({
         success: false,
-        message: "Error al aliminar la receta: " + error.message,
+        message: "Error al eliminar la receta: " + error.message,
       });
     }
   };
@@ -64,65 +71,75 @@ class RecetaController {
     const userId = req.user.id;
 
     try {
-        const userDocRef = await db.collection('usuarios').doc(String(userId));
-        const userDoc = await userDocRef.get();
+      const userDocRef = await db.collection("usuarios").doc(String(userId));
+      const userDoc = await userDocRef.get();
 
-        if (!userDoc.exists) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
+      if (!userDoc.exists) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
 
-        const recetaTemporal = userDoc.data().recetaTemporal;
+      const recetaTemporal = userDoc.data().recetaTemporal;
 
-        if (!recetaTemporal) {
-            return res.status(404).json({ success: false, message: 'No temporary recipe found' });
-        }
+      if (!recetaTemporal) {
+        return res
+          .status(404)
+          .json({ success: false, message: "No temporary recipe found" });
+      }
 
-        console.log(`Receta temporal: ${JSON.stringify(recetaTemporal)}`);
-        res.status(200).json({ success: true, recetaTemporal: recetaTemporal });
+      console.log(`Receta temporal: ${JSON.stringify(recetaTemporal)}`);
+      res.status(200).json({ success: true, recetaTemporal: recetaTemporal });
     } catch (error) {
-        console.error('Error al obtener la receta temporal:', error.message);
-        res.status(500).json({ success: false, message: 'Error al obtener la receta temporal: ' + error.message });
+      console.error("Error al obtener la receta temporal:", error.message);
+      res
+        .status(500)
+        .json({
+          success: false,
+          message: "Error al obtener la receta temporal: " + error.message,
+        });
     }
-};
-
+  };
 
   // Crear una nueva receta
   crearRecetaPersonalizada = async (req, res) => {
-    const userId = req.user.id;
-    const receta = req.body;
+  const userId = req.user.id;
+  const receta = req.body.receta;
 
-    try {
-      await validarReceta(receta);
-
-      // Generar el ID de la receta usando el nombre y la fecha actual
-      const now = new Date();
-      const fechaActual = now.toISOString().split("T")[0]; // Obtener la fecha en formato yyyy-MM-dd
-      const recetaId = `${recetaTemporal.name}_${fechaActual}`;
-
-      const recetaPersonalizada = {
-        ...receta,
-        momentoCreacion: new Date().toISOString(),
-      };
-
-      const recetarioRef = db
-        .collection("usuarios")
-        .doc(String(userId))
-        .collection("creadas");
-      await recetarioRef.doc(recetaId).set(recetaPersonalizada);
-
-      res.status(200).json({
-        success: true,
-        message: "Receta creada exitosamente",
-        recetaId,
-      });
-    } catch (e) {
-      console.error("Error al agregar la receta: ", e.message);
-      res.status(500).json({
-        success: false,
-        message: "Error al agregar la receta: " + e.message,
-      });
+  try {
+    if (!receta || typeof receta.name !== 'string' || receta.name.trim() === '') {
+      throw new Error("El título es obligatorio y debe ser una cadena no vacía.");
     }
-  };
+
+    // Generar el ID de la receta usando el nombre y la fecha actual
+    const now = new Date();
+    const fechaActual = now.toISOString().split("T")[0]; // Obtener la fecha en formato yyyy-MM-dd
+    const recetaId = `${receta.name}_${fechaActual}`;
+
+    const recetaPersonalizada = {
+      ...receta,
+      momentoCreacion: new Date().toISOString(),
+    };
+
+    const recetarioRef = db
+      .collection("usuarios")
+      .doc(String(userId))
+      .collection("creadas");
+    await recetarioRef.doc(recetaId).set(recetaPersonalizada);
+
+    res.status(200).json({
+      success: true,
+      message: "Receta creada exitosamente",
+      recetaId,
+    });
+  } catch (e) {
+    console.error("Error al agregar la receta: ", e.message);
+    res.status(500).json({
+      success: false,
+      message: "Error al agregar la receta: " + e.message,
+    });
+  }
+};
 
   obtenerFavoritas = async (req, res) => {
     const userId = req.user.id;
@@ -142,6 +159,7 @@ class RecetaController {
   puntuarReceta = async (req, res) => {
     const userId = req.user.id;
     const { puntuacion, favorita } = req.body;
+    console.log(puntuacion, favorita);
 
     try {
       await validarPuntuacion(puntuacion);
@@ -167,7 +185,7 @@ class RecetaController {
       // Si usaStock es true, consumir productos del stock
       if (recetaTemporal.usaStock) {
         console.log("Receta usa stock. Consumiendo ingredientes");
-          await StockController.consumirProductos({ ...recetaTemporal, userId });
+        await StockController.consumirProductos({ ...recetaTemporal, userId });
       }
 
       // Crear una nueva receta con la puntuación y guardar en la colección recetas del usuario
