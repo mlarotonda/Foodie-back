@@ -134,7 +134,7 @@ class GeminiController {
             IMPORTANTE: Los ingredientes de las recetas deben tener el nombre de los que están en la lista anterior, debes cambiar el nombre de los ingredientes para que sean exactamente iguales a alguno de la lista. ESTO ES UN REQUERIMIENTO EXCLUYENTE.
             Calcula las porciones para ${cantidadPersonas} personas.
             Las porciones de los ingredientes deben estar medidas UNICAMENTE en "gramos", "mililitros" o "unidades", convertir las demás a la que sea más conveniente. NO USAR ABREVIACIONES.
-            Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (1,2,3,etc)}.
+            Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (cada oracion es un paso distinto)}.
           `;
 
       if (allRestrictions.length > 0) {
@@ -147,14 +147,21 @@ class GeminiController {
 
       const finalJson = await parseadorJson(rawText);
 
-      // Formatear descripciones de ingredientes
-      finalJson.forEach((recipe) => {
+      // Formatear descripciones de ingredientes y pasos de receta
+      await finalJson.forEach((recipe) => {
         recipe.ingredients.forEach((ingredient) => {
-          ingredient.description = formatDescription(ingredient.description);
+          ingredient.description = formatText(ingredient.description);
         });
+        recipe.steps.forEach((paso)=>{
+          paso = formatText(paso);
+        })
       });
 
       await asignarImagen(finalJson);
+
+      for(let recipe of finalJson){
+        recipe.usaStock = true;
+      }
 
       console.log("--response");
       console.log("Final JSON:", finalJson);
@@ -239,7 +246,7 @@ class GeminiController {
           IMPORTANTE: Los ingredientes de las recetas deben tener el nombre de los que estan en la lista anterior, debes cambiar el nombre de los ingredientes para que sean exactamente iguales a alguno de la lista. ESTO ES UN REQUERIMIENTO EXCLUYENTE
           Las recetas deben estar pensadas para ${cantidadPersonas} personas, y las porciones pueden ser ajustadas para coincidir con eso.
           Las porciones de los ingredientes deben estar medidas UNICAMENTE en "gramos", "mililitros" o "unidades", convertir las demás a la que sea más conveniente. NO USAR ABREVIACIONES
-          Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (1,2,3,etc)}.
+          Devolver las 3 recetas en formato JSON, con los campos {name, ingredients (description, quantity, unit), steps (cada oracion es un paso distinto)}.
         `;
 
       if (allRestrictions.length > 0) {
@@ -252,15 +259,22 @@ class GeminiController {
 
       const finalJson = await parseadorJson(rawText);
 
-      // Formatear descripciones de ingredientes
-      finalJson.forEach((recipe) => {
+      // Formatear descripciones de ingredientes y pasos de receta
+      await finalJson.forEach((recipe) => {
         recipe.ingredients.forEach((ingredient) => {
-          ingredient.description = formatDescription(ingredient.description);
+          ingredient.description = formatText(ingredient.description);
         });
+        recipe.steps.forEach((paso)=>{
+          paso = formatText(paso);
+        })
       });
 
       await asignarImagen(finalJson);
       await calcularCosto(finalJson);
+
+      for(let recipe of finalJson){
+        recipe.usaStock = false;
+      }
 
       console.log("--response");
       console.log("Final JSON:", finalJson);
@@ -413,9 +427,9 @@ const coincidenciasConStock = async (recipes, userId) => {
   }
 };
 
-const formatDescription = (description) => {
+const formatText = (text) => {
   return (
-    description.charAt(0).toUpperCase() + description.slice(1).toLowerCase()
+    text.charAt(0).toUpperCase() + text.slice(1).toLowerCase()
   );
 };
 
