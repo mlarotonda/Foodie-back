@@ -13,11 +13,12 @@ admin.initializeApp({
 const db = admin.firestore();
 const bucket = admin.storage().bucket();
 
-const apikey = config.googleAPI;
-const cx = config.buscador;
+const apikey = "AIzaSyAS84CqIgescRVP2lv-G1X8k9TwiKJ7Jwo";
+const cx = '92403c1691e7c486c';
+//const cx = "271767e05585f43e9";
 
-//const model = await createModel();
-const genAI = new GoogleGenerativeAI(config.generativeAIKey);
+// Inicializar GoogleGenerativeAI con la API key correcta
+const genAI = new GoogleGenerativeAI("AIzaSyBGB8MC95KLV4Ttl64YHiYjpkh9oQIwsDI");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const defaultImageUrl = "https://www.svgrepo.com/show/146075/question.svg";
@@ -52,7 +53,10 @@ const traducirIngrediente = async (nombre) => {
     console.log(`Traducción de ${nombre}: ${translatedText}`);
     return translatedText || "no encontre";
   } catch (error) {
-    console.log(`Error al traducir el ingrediente ${nombre}: ${error}`);
+    console.error(`Error al traducir el ingrediente ${nombre}: ${error}`);
+    if (error.response && error.response.data) {
+      console.error(`Detalles del error: ${JSON.stringify(error.response.data)}`);
+    }
     return "no encontre";
   }
 };
@@ -71,6 +75,9 @@ const getImageUrls = async (searchTerm, numImages = 5) => {
     return svgImageUrls;
   } catch (error) {
     console.log(`Error al obtener las URLs de las imágenes para ${searchTerm}: ${error}`);
+    if (error.response) {
+      console.log(`Detalles del error: ${JSON.stringify(error.response.data)}`);
+    }
     return [];
   }
 };
@@ -133,8 +140,6 @@ const processIngredient = async (ingredientName) => {
 
 const generateImagesForIngredients = async () => {
   try {
-    await clearImageDirectory();
-
     const ingredientsSnapshot = await db.collection('productos').get();
     if (ingredientsSnapshot.empty) {
       console.log('No hay ingredientes en la colección.');
@@ -142,8 +147,16 @@ const generateImagesForIngredients = async () => {
     }
 
     for (const doc of ingredientsSnapshot.docs) {
-      const ingredientName = doc.id;
-      await processIngredient(ingredientName);
+      const data = doc.data();
+
+      // Procesar si el producto no tiene una imagen asignada o si la imagen es la predeterminada
+      if (data.imageUrl === undefined || data.imageUrl === "" || data.imageUrl === defaultImageUrl) {
+        console.log(`Producto: ${doc.id} no tiene una imagen válida. Procesando...`);
+        const ingredientName = doc.id;
+        await processIngredient(ingredientName);
+      } else {
+        console.log(`Producto: ${doc.id} ya tiene una imagen válida. Saltando...`);
+      }
     }
 
     console.log('Imágenes generadas y actualizadas con éxito.');
