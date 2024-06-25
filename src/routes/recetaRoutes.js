@@ -8,7 +8,7 @@ const router = Router();
 router.post("/user", authMiddleware, RecetaController.generarRecetas);
 
 //Recetas random
-router.get("/random", authMiddleware, RecetaController.generarRecetasRandom);
+router.post("/random", authMiddleware, RecetaController.generarRecetasRandom);
 
 //Colecciones de recetas
 router.get("/favoritas", authMiddleware, RecetaController.obtenerFavoritas);
