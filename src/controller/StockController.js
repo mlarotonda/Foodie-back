@@ -262,17 +262,6 @@ class StockController {
         // Validar la cantidad
         validarProductoParaConsumo({ cantidad });
 
-        // Verificar que el nombre del producto coincida con un documento en la colección productos
-        const productoDoc = await db
-          .collection("productos")
-          .doc(nombreProducto)
-          .get();
-
-        if (!productoDoc.exists) {
-          productosNoConsumidos.push({ nombre: nombreProducto, cantidad, unidadMedida: unidad });
-        continue;
-        }
-
         // Buscar el producto en el stock del usuario
         const productoRef = db
           .collection("usuarios")
@@ -283,6 +272,7 @@ class StockController {
         const docSnap = await productoRef.get();
 
         if (!docSnap.exists) {
+          console.log(`${nombreProducto} no se encuentra en el stock`)
           productosNoConsumidos.push({ nombre: nombreProducto, cantidad, unidadMedida: unidad });
         continue;
         }
@@ -292,6 +282,18 @@ class StockController {
         // Verificar si la cantidad solicitada es menor o igual a la cantidad en stock
         if (cantidad > productoExistente.cantidad) {
           return res.status(400).json({error: `Cantidad solicitada de ${nombreProducto} (${cantidad}) es mayor que la cantidad en stock (${productoExistente.cantidad}).`,});
+        }
+
+        // Verificar que el nombre del producto coincida con un documento en la colección productos
+        const productoDoc = await db
+          .collection("productos")
+          .doc(nombreProducto)
+          .get();
+
+        if (!productoDoc.exists) {
+          console.log(`${nombreProducto} no se encuentra en la coleccion de productos`)
+          productosNoConsumidos.push({ nombre: nombreProducto, cantidad, unidadMedida: unidad });
+        continue;
         }
       }
       // Si todas las validaciones pasan, realizar la resta de los productos
