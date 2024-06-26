@@ -34,7 +34,16 @@ class EanController {
             }
         }
 
-        res.json( tipoProducto );
+        if (tipoProducto) {
+            const productoRef = db.collection("productos").doc(tipoProducto);
+            const productoDoc = await productoRef.get();
+
+            if (productoDoc.exists) {
+                unidadMedida = productoDoc.data().unidadMedida;
+            }
+        }
+
+        res.json( tipoProducto, unidadMedida );
     } catch (e) {
         console.error("Error al procesar el EAN: ", e.message);
         res.status(400).json({ error: `Error al procesar el EAN: ${e.message}` });
