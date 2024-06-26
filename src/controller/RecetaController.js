@@ -1,8 +1,8 @@
 import { db } from "../connection/firebaseConnection.js";
 import { collection, addDoc, getDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import GeminiController from './GeminiController.js';
-import RatoneandoController from "./RatoneandoController.js";
 import StockController from "./StockController.js"
+import axios from "axios";
 
 class RecetaController {
   generarRecetas = (req, res) => {
@@ -129,6 +129,8 @@ class RecetaController {
         momentoCreacion: new Date().toISOString(),
         usaStock: false,
       };
+
+      await asignarImagenAReceta(recetaPersonalizada);
 
       const recetarioRef = db
         .collection("usuarios")
@@ -280,6 +282,8 @@ const obtenerRecetas = async (userId, coleccion, res) => {
       const querySnapshot = await recetasRef.get();
       const recetas = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+      console.log(`Recetas de la coleccion ${coleccion} devueltas`)
+
       res.status(200).json({ success: true, recetas });
   } catch (error) {
       console.error('Error al obtener las recetas de ${coleccion}:', error.message);
@@ -303,5 +307,26 @@ const generateRecipes = async (req, res, method) => {
     } else {
       return res.status(500).send({ success: false, message: 'Error al obtener datos de la API externa: ' + error.message });
     }
+  }
+};
+
+const asignarImagenAReceta = async (receta) => {
+  const searchTerm = receta.name.replace(" ", "+");
+  const cx = "d4a81011643ae44dd";
+  const apikey = "AIzaSyAS84CqIgescRVP2lv-G1X8k9TwiKJ7Jwo";
+  const url = `https://www.googleapis.com/customsearch/v1?key=${apikey}&cx=${cx}&q=${searchTerm}&searchType=IMAGE&num=1`;
+
+  try {
+    const response = await axios.get(url);
+    if (response.status !== 200) {
+      console.error(`Error al obtener la URL de la imagen: ${response.status}`);
+      return null;
+    }
+
+    const firstImage = response.data.items[0].link;
+    receta.imageUrl = firstImage ? firstImage : null;
+  } catch (error) {
+    console.error(`Error al obtener la URL de la imagen: ${error}`);
+    receta.imageUrl = null;
   }
 };

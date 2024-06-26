@@ -5,7 +5,7 @@ class StockController {
   async confirmacionUsuario(req, res) {
 
     const userId = req.user.id;
-    const { ean, tipoProducto, cantidad, unidad, alerta } = req.body;
+    const { ean, tipoProducto, cantidad, unidad, alerta, unidadMedida } = req.body;
 
     if (!userId || !ean || !tipoProducto || !cantidad || !unidad || !alerta) {
       console.log("Datos incompletos en la solicitud");
@@ -51,14 +51,11 @@ class StockController {
           }`
         );
       } else {
-        const ingredienteSnapshot = await db.collection("productos").doc(tipoProducto);
-        const ingredienteRef = await ingredienteSnapshot.get();
-        const unidadMedida = ingredienteRef.data().unidadMedida;
 
         await userStockRef.set({
           cantidad: cantidad * unidad,
           ultimaCarga: new Date().toISOString(),
-          unidadMedida,
+          unidadMedida: unidadMedida,
           alertaEscasez: alerta,
         });
 
@@ -101,11 +98,11 @@ class StockController {
       } else {
         const ingredienteSnapshot = await db.collection("productos").doc(nombreProducto);
         const ingredienteRef = await ingredienteSnapshot.get();
-        const unidad = ingredienteRef.data().unidadMedida;
+        const medicion = ingredienteRef.data().unidadMedida;
 
         await productoRef.set({ 
           cantidad: cantAgregada,
-          unidad,
+          unidadMedida: medicion,
           ultimaCarga,
           alertaEscasez: alerta,
         });
