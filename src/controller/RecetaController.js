@@ -15,13 +15,13 @@ class RecetaController {
 
   guardarRecetaTemporal = async (req, res) => {
     const userId = req.user.id;
-    const { receta} = req.body;
+    const receta = req.body;
 
     try {
       const userDocRef = await db.collection("usuarios").doc(String(userId));
 
       await userDocRef.update({
-        recetaTemporal: {receta},
+        recetaTemporal: receta,
       });
 
       console.log("Receta temporal guardada exitosamente");
@@ -92,55 +92,63 @@ class RecetaController {
       res.status(200).json({ success: true, recetaTemporal: recetaTemporal });
     } catch (error) {
       console.error("Error al obtener la receta temporal:", error.message);
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Error al obtener la receta temporal: " + error.message,
-        });
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener la receta temporal: " + error.message,
+      });
     }
   };
 
   // Crear una nueva receta
   crearRecetaPersonalizada = async (req, res) => {
-  const userId = req.user.id;
-  const receta = req.body.receta;
+    const userId = req.user.id;
+    console.log(req.body);
+  const {
+  name,
+  ingredients,
+  steps,
+} = req.body;
 
-  try {
-    if (!receta || typeof receta.name !== 'string' || receta.name.trim() === '') {
-      throw new Error("El título es obligatorio y debe ser una cadena no vacía.");
+
+    try {
+      if (!name || typeof name !== "string" || name.trim() === "") {
+        throw new Error(
+          "El título es obligatorio y debe ser una cadena no vacía."
+        );
+      }
+
+      // Generar el ID de la receta usando el nombre y la fecha actual
+      const now = new Date();
+      const fechaActual = now.toISOString().split("T")[0]; // Obtener la fecha en formato yyyy-MM-dd
+      const recetaId = `${name}_${fechaActual}`;
+
+      const recetaPersonalizada = {
+        name,
+        ingredients,
+        steps,
+        momentoCreacion: new Date().toISOString(),
+        usaStock: false,
+      };
+
+      const recetarioRef = db
+        .collection("usuarios")
+        .doc(String(userId))
+        .collection("creadas");
+      await recetarioRef.doc(recetaId).set(recetaPersonalizada);
+
+      res.status(200).json({
+        success: true,
+        message: "Receta creada exitosamente",
+        recetaId,
+      });
+    } catch (e) {
+      console.error("Error al agregar la receta: ", e.message);
+      res.status(500).json({
+        success: false,
+        message: "Error al agregar la receta: " + e.message,
+      });
     }
-
-    // Generar el ID de la receta usando el nombre y la fecha actual
-    const now = new Date();
-    const fechaActual = now.toISOString().split("T")[0]; // Obtener la fecha en formato yyyy-MM-dd
-    const recetaId = `${receta.name}_${fechaActual}`;
-
-    const recetaPersonalizada = {
-      ...receta,
-      momentoCreacion: new Date().toISOString(),
-      usaStock: false,
-    };
-
-    const recetarioRef = db
-      .collection("usuarios")
-      .doc(String(userId))
-      .collection("creadas");
-    await recetarioRef.doc(recetaId).set(recetaPersonalizada);
-
-    res.status(200).json({
-      success: true,
-      message: "Receta creada exitosamente",
-      recetaId,
-    });
-  } catch (e) {
-    console.error("Error al agregar la receta: ", e.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al agregar la receta: " + e.message,
-    });
-  }
-};
+  };
 
   obtenerFavoritas = async (req, res) => {
     const userId = req.user.id;
