@@ -147,8 +147,10 @@ class GeminiController {
 
       const finalJson = await parseadorJson(rawText);
 
-      // Formatear descripciones de ingredientes y pasos de receta
+      // Formatear texto de las recetas
       await finalJson.forEach((recipe) => {
+        recipe.name = formatText(recipe.name);
+        
         recipe.ingredients.forEach((ingredient) => {
           ingredient.description = formatText(ingredient.description);
         });
@@ -259,8 +261,10 @@ class GeminiController {
 
       const finalJson = await parseadorJson(rawText);
 
-      // Formatear descripciones de ingredientes y pasos de receta
+      // Formatear texto de las recetas
       await finalJson.forEach((recipe) => {
+        recipe.name = formatText(recipe.name);
+        
         recipe.ingredients.forEach((ingredient) => {
           ingredient.description = formatText(ingredient.description);
         });

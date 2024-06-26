@@ -1,13 +1,16 @@
 import express from "express";
 import router from "./routes/router.js";
 import config  from "./config/config.js";
+import cors from "cors";
 //import { db } from "./connection/connection.js"; // Asegúrate de importar correctamente
 
 const app = express();
 const port = config.serverPort;
 
-// Conexión a Firebase
-console.log("Firebase app initialized:");
+//Permite solicitudes de otro puerto
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
