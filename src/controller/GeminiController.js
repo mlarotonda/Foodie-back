@@ -27,19 +27,19 @@ class GeminiController {
       } else {
         const productoDoc = await db
           .collection("productos")
-          .doc(cleanedText.replace(".", ""))
+          .doc(tipoDeProducto.replace(".", ""))
           .get();
         console.log(productoDoc);
         if (productoDoc.exists) {
           const productoData = productoDoc.data();
           return {
-            tipo: cleanedText,
+            tipo: tipoDeProducto,
             unidad: productoData.unidadMedida,
             imageUrl: productoData.imageUrl,
           };
         } else {
           return {
-            tipo: cleanedText,
+            tipo: tipoDeProducto  ,
             unidad: null,
             imageUrl: null,
           };
