@@ -34,13 +34,13 @@ class GeminiController {
           const productoData = productoDoc.data();
           return {
             tipo: tipoDeProducto,
-            unidad: productoData.unidadMedida,
+            unidadMedida: productoData.unidadMedida,
             imageUrl: productoData.imageUrl,
           };
         } else {
           return {
             tipo: tipoDeProducto  ,
-            unidad: null,
+            unidadMedida: null,
             imageUrl: null,
           };
         }
