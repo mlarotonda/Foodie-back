@@ -59,7 +59,7 @@ class PersonaController {
       const docRef = db.collection("personas").doc(persona.personaId);
       await docRef.set(persona);
       console.log("Documento escrito con ID: ", persona.personaId);
-      return { status: 201, data: { id: persona.personaId, ...persona } };
+      return { status: 201, id: persona.personaId, ...persona };
     } catch (e) {
       console.error("Error al agregar el documento: ", e.message);
       return {

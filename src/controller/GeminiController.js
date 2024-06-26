@@ -27,20 +27,20 @@ class GeminiController {
       } else {
         const productoDoc = await db
           .collection("productos")
-          .doc(cleanedText.replace(".", ""))
+          .doc(tipoDeProducto.replace(".", ""))
           .get();
         console.log(productoDoc);
         if (productoDoc.exists) {
           const productoData = productoDoc.data();
           return {
-            tipo: cleanedText,
-            unidad: productoData.unidadMedida,
+            tipo: tipoDeProducto,
+            unidadMedida: productoData.unidadMedida,
             imageUrl: productoData.imageUrl,
           };
         } else {
           return {
-            tipo: cleanedText,
-            unidad: null,
+            tipo: tipoDeProducto  ,
+            unidadMedida: null,
             imageUrl: null,
           };
         }
@@ -147,8 +147,10 @@ class GeminiController {
 
       const finalJson = await parseadorJson(rawText);
 
-      // Formatear descripciones de ingredientes y pasos de receta
+      // Formatear texto de las recetas
       await finalJson.forEach((recipe) => {
+        recipe.name = formatText(recipe.name);
+        
         recipe.ingredients.forEach((ingredient) => {
           ingredient.description = formatText(ingredient.description);
         });
@@ -259,8 +261,10 @@ class GeminiController {
 
       const finalJson = await parseadorJson(rawText);
 
-      // Formatear descripciones de ingredientes y pasos de receta
+      // Formatear texto de las recetas
       await finalJson.forEach((recipe) => {
+        recipe.name = formatText(recipe.name);
+        
         recipe.ingredients.forEach((ingredient) => {
           ingredient.description = formatText(ingredient.description);
         });

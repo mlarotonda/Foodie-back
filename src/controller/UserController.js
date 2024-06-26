@@ -154,6 +154,7 @@ class UserController {
   // Autenticar usuario y generar token
   async login(req, res) {
     const { mail, password } = req.body;
+    console.log(`mail: ${mail}, password: ${password}`)
 
     try {
       const userRef = db.collection("usuarios").doc(mail);
@@ -176,6 +177,8 @@ class UserController {
       });
 
       const recetaTemporal = user.recetaTemporal || null;
+
+      console.log(`Logueado exitosamente con el mail: ${mail}`)
 
       res.status(200).json({ auth: true, token, recetaTemporal });
     } catch (e) {

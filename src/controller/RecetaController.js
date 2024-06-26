@@ -1,8 +1,8 @@
 import { db } from "../connection/firebaseConnection.js";
 import { collection, addDoc, getDoc, updateDoc, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import GeminiController from './GeminiController.js';
-import RatoneandoController from "./RatoneandoController.js";
 import StockController from "./StockController.js"
+import axios from "axios";
 
 class RecetaController {
   generarRecetas = (req, res) => {
@@ -15,13 +15,13 @@ class RecetaController {
 
   guardarRecetaTemporal = async (req, res) => {
     const userId = req.user.id;
-    const { receta} = req.body;
+    const receta = req.body;
 
     try {
       const userDocRef = await db.collection("usuarios").doc(String(userId));
 
       await userDocRef.update({
-        recetaTemporal: {receta},
+        recetaTemporal: receta,
       });
 
       console.log("Receta temporal guardada exitosamente");
@@ -92,55 +92,65 @@ class RecetaController {
       res.status(200).json({ success: true, recetaTemporal: recetaTemporal });
     } catch (error) {
       console.error("Error al obtener la receta temporal:", error.message);
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: "Error al obtener la receta temporal: " + error.message,
-        });
+      res.status(500).json({
+        success: false,
+        message: "Error al obtener la receta temporal: " + error.message,
+      });
     }
   };
 
   // Crear una nueva receta
   crearRecetaPersonalizada = async (req, res) => {
-  const userId = req.user.id;
-  const receta = req.body.receta;
+    const userId = req.user.id;
+    console.log(req.body);
+  const {
+  name,
+  ingredients,
+  steps,
+} = req.body;
 
-  try {
-    if (!receta || typeof receta.name !== 'string' || receta.name.trim() === '') {
-      throw new Error("El título es obligatorio y debe ser una cadena no vacía.");
+
+    try {
+      if (!name || typeof name !== "string" || name.trim() === "") {
+        throw new Error(
+          "El título es obligatorio y debe ser una cadena no vacía."
+        );
+      }
+
+      // Generar el ID de la receta usando el nombre y la fecha actual
+      const now = new Date();
+      const fechaActual = now.toISOString().split("T")[0]; // Obtener la fecha en formato yyyy-MM-dd
+      const recetaId = `${name}_${fechaActual}`;
+
+      const recetaPersonalizada = {
+        name,
+        ingredients,
+        steps,
+        momentoCreacion: new Date().toISOString(),
+        usaStock: false,
+      };
+
+      await asignarImagenAReceta(recetaPersonalizada);
+
+      const recetarioRef = db
+        .collection("usuarios")
+        .doc(String(userId))
+        .collection("creadas");
+      await recetarioRef.doc(recetaId).set(recetaPersonalizada);
+
+      res.status(200).json({
+        success: true,
+        message: "Receta creada exitosamente",
+        recetaId,
+      });
+    } catch (e) {
+      console.error("Error al agregar la receta: ", e.message);
+      res.status(500).json({
+        success: false,
+        message: "Error al agregar la receta: " + e.message,
+      });
     }
-
-    // Generar el ID de la receta usando el nombre y la fecha actual
-    const now = new Date();
-    const fechaActual = now.toISOString().split("T")[0]; // Obtener la fecha en formato yyyy-MM-dd
-    const recetaId = `${receta.name}_${fechaActual}`;
-
-    const recetaPersonalizada = {
-      ...receta,
-      momentoCreacion: new Date().toISOString(),
-      usaStock: false,
-    };
-
-    const recetarioRef = db
-      .collection("usuarios")
-      .doc(String(userId))
-      .collection("creadas");
-    await recetarioRef.doc(recetaId).set(recetaPersonalizada);
-
-    res.status(200).json({
-      success: true,
-      message: "Receta creada exitosamente",
-      recetaId,
-    });
-  } catch (e) {
-    console.error("Error al agregar la receta: ", e.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al agregar la receta: " + e.message,
-    });
-  }
-};
+  };
 
   obtenerFavoritas = async (req, res) => {
     const userId = req.user.id;
@@ -272,6 +282,8 @@ const obtenerRecetas = async (userId, coleccion, res) => {
       const querySnapshot = await recetasRef.get();
       const recetas = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+      console.log(`Recetas de la coleccion ${coleccion} devueltas`)
+
       res.status(200).json({ success: true, recetas });
   } catch (error) {
       console.error('Error al obtener las recetas de ${coleccion}:', error.message);
@@ -295,5 +307,26 @@ const generateRecipes = async (req, res, method) => {
     } else {
       return res.status(500).send({ success: false, message: 'Error al obtener datos de la API externa: ' + error.message });
     }
+  }
+};
+
+const asignarImagenAReceta = async (receta) => {
+  const searchTerm = receta.name.replace(" ", "+");
+  const cx = "d4a81011643ae44dd";
+  const apikey = "AIzaSyAS84CqIgescRVP2lv-G1X8k9TwiKJ7Jwo";
+  const url = `https://www.googleapis.com/customsearch/v1?key=${apikey}&cx=${cx}&q=${searchTerm}&searchType=IMAGE&num=1`;
+
+  try {
+    const response = await axios.get(url);
+    if (response.status !== 200) {
+      console.error(`Error al obtener la URL de la imagen: ${response.status}`);
+      return null;
+    }
+
+    const firstImage = response.data.items[0].link;
+    receta.imageUrl = firstImage ? firstImage : null;
+  } catch (error) {
+    console.error(`Error al obtener la URL de la imagen: ${error}`);
+    receta.imageUrl = null;
   }
 };
