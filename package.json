@@ -5,6 +5,7 @@
   "description": "",
   "scripts": {
     "start": "node .",
+    "build": "npm install",
     "dev": "nodemon ./src/netlify/functions/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "node --watch ."
