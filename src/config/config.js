@@ -29,6 +29,9 @@ const googleAPI = process.env.GOOGLE_API_KEY;
 //Gen AI key
 const generativeAIKey = process.env.GEN_AI_KEY;
 
+const firestorePrivateKeyId = process.env.FIRESTORE_PRIVATEKEYID;
+const firestorePrivateKey = process.env.FIRESTORE_PRIVATEKEY;
+
 const config = {
   apiKeyFirebase,
   authDomain,
@@ -44,6 +47,8 @@ const config = {
   googleAPI,
   generativeAIKey,
   secretKey,
+  firestorePrivateKeyId,
+  firestorePrivateKey,
 };
 
 export default config;

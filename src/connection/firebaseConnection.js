@@ -1,5 +1,9 @@
 import admin from "firebase-admin";
 import serviceAccount from '../../firebaseServiceAccountKey.json' assert { type: "json" };
+import config from "../config/config.js";
+
+serviceAccount.private_key_id = config.firestorePrivateKeyId;
+serviceAccount.private_key = config.firestorePrivateKey.replace(/\\n/g, '\n'); // Reemplaza \n por saltos de línea reales
 
 async function initializeFirebase() {
   admin.initializeApp({
