@@ -8,7 +8,8 @@
     "start": "node .",
     "dev": "nodemon ./src/netlify/functions/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "watch": "node --watch ."
+    "watch": "node --watch .",
+    "build": "your-build-command"
   },
   "author": "",
   "license": "ISC",

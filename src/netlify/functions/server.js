@@ -1,12 +1,10 @@
 import express from "express";
 import serverless from "serverless-http";
 import router from "../../routes/router.js";
-import config from "../../config/config.js";
 import cors from "cors";
 
 const app = express();
 
-// Permite solicitudes de otro puerto
 app.use(cors({
   origin: 'http://localhost:3000'
 }));
