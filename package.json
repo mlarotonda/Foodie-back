@@ -6,7 +6,7 @@
   "main": "src/controller/GeminiController.js",
   "scripts": {
     "start": "node .",
-    "dev": "nodemon ./src/index.js",
+    "dev": "nodemon ./src/netlify/functions/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "node --watch ."
   },
